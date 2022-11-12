@@ -3,8 +3,8 @@ version: "3.8"
 services:
   app:
     build: .
-    # volumes:
-    #   - src:/usr/java/jetty/webapps
+    volumes:
+      - ./src/main/java/com/example/p6:/var/app/main/java/com/example/p6
     env_file:
       - .env
     ports:
