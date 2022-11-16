@@ -1,7 +1,9 @@
 package com.example.p6;
 
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import java.util.HashMap;
 
 @RestController
@@ -39,16 +41,43 @@ public class P6Controller {
 	}
 
 	/**
-    * Configure the connection of the adapter to targeted data in both the datasource and Deep Lynx
+    * Get the post body requirement for the configure POST endpoint
     */
 	@GetMapping("/configure")
-	public HashMap<String, String> configure() {
+	public HashMap<String, String> configure_example() {
+
+		HashMap<String, String> example_map = new HashMap<String, String>();
+			
+		example_map.put("deepLynxURL", "STRING");
+		example_map.put("deepLynxContainer", "STRING");
+		example_map.put("deepLynxDatasource", "STRING");
+		example_map.put("deepLynxApiKey", "STRING");
+		example_map.put("deepLynxApiSecret", "STRING");
+		example_map.put("p6URL", "STRING");
+		example_map.put("p6Project", "STRING");
+		example_map.put("p6Username", "STRING");
+		example_map.put("p6Password", "STRING");
+
+		return example_map;
+	}
+
+	/**
+    * Create an entry in the connections table for the adapter to run on
+    */
+	@PostMapping("/configure")
+	public HashMap<String, String> configure(@RequestBody HashMap<String, String> payload) {
 
 		HashMap<String, String> status_map = new HashMap<String, String>();
 
-		SQLConnect sqlconnect = new SQLConnect(); 
+		SQLConnect sqlconnect = new SQLConnect();
+		status_map.put("sql_migration_success", "false");
+		status_map.put("sql_configuration_success", "false");
+
 		if (sqlconnect.connect()) {
-			status_map.put("sql_driver_name", sqlconnect.driverName());
+			boolean migration_success = sqlconnect.migrate();
+			status_map.put("sql_migration_success", String.valueOf(migration_success));
+			boolean configuration_success = sqlconnect.add_connection(payload);
+			status_map.put("sql_configuration_success", String.valueOf(configuration_success));
 			sqlconnect.close();
 		}
 
@@ -58,12 +87,22 @@ public class P6Controller {
 	/**
     * Update the adapter's configuration settings.
     */
-	@GetMapping("/update")
-	public HashMap<String, String> update() {
+	@GetMapping("/update") // TODO: detemrine if this endpoint is redundant
+	public HashMap<String, String> update(@RequestBody HashMap<String, String> payload) {
 
 		HashMap<String, String> status_map = new HashMap<String, String>();
-		status_map.put("last_accessed_by", "brennan.harris@inl.gov");
-		status_map.put("last_accessed", "2022-11-14T15:57:09");
+
+		SQLConnect sqlconnect = new SQLConnect();
+		status_map.put("sql_migration_success", "false");
+		status_map.put("sql_configuration_success", "false");
+
+		if (sqlconnect.connect()) {
+			boolean migration_success = sqlconnect.migrate();
+			status_map.put("sql_migration_success", String.valueOf(migration_success));
+			boolean configuration_success = sqlconnect.add_connection(payload);
+			status_map.put("sql_configuration_success", String.valueOf(configuration_success));
+			sqlconnect.close();
+		}
 
 		return status_map;
 	}
