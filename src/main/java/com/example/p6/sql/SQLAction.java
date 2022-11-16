@@ -26,4 +26,10 @@ public class SQLAction {
                    + ");\n";
         return sql;
     }
+
+    public static String getConnections() {
+        String sql = "SELECT deepLynxURL, deepLynxContainer, deepLynxDatasource, deepLynxApiKey, deepLynxApiSecret, p6URL, p6Project, p6Username, p6Password\n"
+                   + "    FROM connections;";
+        return sql;
+    }
 }

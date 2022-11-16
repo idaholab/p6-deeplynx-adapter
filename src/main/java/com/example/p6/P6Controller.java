@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import java.util.HashMap;
 
+
 @RestController
 public class P6Controller {
 
@@ -34,8 +35,12 @@ public class P6Controller {
 		// TODO: add code to test the connection to P6 and return a status
 
 		HashMap<String, String> status_map = new HashMap<String, String>();
-		status_map.put("last_accessed_by", "brennan.harris@inl.gov");
-		status_map.put("last_accessed", "2022-11-14T15:57:09");
+		SQLConnect sqlconnect = new SQLConnect();
+
+		if (sqlconnect.connect()) {
+			status_map.put("sql_driver_name", sqlconnect.getDriverName());
+			sqlconnect.close();
+		}
 
 		return status_map;
 	}
@@ -76,7 +81,7 @@ public class P6Controller {
 		if (sqlconnect.connect()) {
 			boolean migration_success = sqlconnect.migrate();
 			status_map.put("sql_migration_success", String.valueOf(migration_success));
-			boolean configuration_success = sqlconnect.add_connection(payload);
+			boolean configuration_success = sqlconnect.addConnection(payload);
 			status_map.put("sql_configuration_success", String.valueOf(configuration_success));
 			sqlconnect.close();
 		}
@@ -87,7 +92,7 @@ public class P6Controller {
 	/**
     * Update the adapter's configuration settings.
     */
-	@GetMapping("/update") // TODO: detemrine if this endpoint is redundant
+	@PostMapping("/update") // TODO: detemrine if this endpoint is redundant
 	public HashMap<String, String> update(@RequestBody HashMap<String, String> payload) {
 
 		HashMap<String, String> status_map = new HashMap<String, String>();
@@ -99,8 +104,28 @@ public class P6Controller {
 		if (sqlconnect.connect()) {
 			boolean migration_success = sqlconnect.migrate();
 			status_map.put("sql_migration_success", String.valueOf(migration_success));
-			boolean configuration_success = sqlconnect.add_connection(payload);
+			boolean configuration_success = sqlconnect.addConnection(payload);
 			status_map.put("sql_configuration_success", String.valueOf(configuration_success));
+			sqlconnect.close();
+		}
+
+		return status_map;
+	}
+
+	/**
+    * Update the adapter's configuration settings.
+    */
+	@GetMapping("/test") // TODO: detemrine if this endpoint is redundant
+	public HashMap<String, String> test() {
+
+		HashMap<String, String> status_map = new HashMap<String, String>();
+
+		SQLConnect sqlconnect = new SQLConnect();
+		status_map.put("sql_migration_success", "false");
+		status_map.put("sql_configuration_success", "false");
+
+		if (sqlconnect.connect()) {
+			sqlconnect.getConnections();
 			sqlconnect.close();
 		}
 

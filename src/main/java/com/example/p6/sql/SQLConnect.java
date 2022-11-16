@@ -5,8 +5,10 @@ import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.ResultSet;
 
 import java.util.HashMap;
+import java.util.ArrayList;
 
 /**
 * Class for connecting to the adapter's SQLite instance, for storing 
@@ -78,7 +80,7 @@ public class SQLConnect {
     /**
     * Add entry to the connections table
     */
-    public static boolean add_connection(HashMap<String, String> connection_map) {
+    public static boolean addConnection(HashMap<String, String> connection_map) {
         try {
             if (conn != null) {
                 // initialize statement
@@ -109,15 +111,53 @@ public class SQLConnect {
     }
 
     /**
+    * Get all entries from connections table
+    */
+    public static ArrayList<HashMap<String, String>> getConnections() {
+        ArrayList<HashMap<String, String>> connectionsList = new ArrayList<HashMap<String, String>>();
+
+        try {
+            if (conn != null) {
+                // initialize statement
+                Statement stmt = conn.createStatement();
+
+                // query
+                SQLAction sqlact = new SQLAction();
+                ResultSet rs = stmt.executeQuery(sqlact.getConnections());
+                while (rs.next()) {
+                    HashMap<String, String> tempMap = new HashMap<String, String>();
+                    tempMap.put("deepLynxURL", rs.getString("deepLynxURL"));
+                    tempMap.put("deepLynxContainer", rs.getString("deepLynxContainer"));
+                    tempMap.put("deepLynxDatasource", rs.getString("deepLynxDatasource"));
+                    tempMap.put("deepLynxApiKey", rs.getString("deepLynxApiKey"));
+                    tempMap.put("deepLynxApiSecret", rs.getString("deepLynxApiSecret"));
+                    tempMap.put("p6URL", rs.getString("p6URL"));
+                    tempMap.put("p6Project", rs.getString("p6Project"));
+                    tempMap.put("p6Username", rs.getString("p6Username"));
+                    tempMap.put("p6Password", rs.getString("p6Password"));
+                    connectionsList.add(tempMap);
+                }
+            } else {
+                System.out.println("Connection query to SQLite not completed (connection was null).");
+            }
+        } catch (SQLException ex) {
+            System.out.println(ex.getMessage());
+        }
+
+        System.out.println(connectionsList);
+        return connectionsList;
+    }
+
+    /**
     * Get the database access driver name
     */
-    public static String driverName() {
+    public static String getDriverName() {
         try {
             if (conn != null) {
                 DatabaseMetaData mdata = conn.getMetaData();
                 return mdata.getDriverName();
             } else {
-                System.out.println("Connection is already null.");
+                System.out.println("Connection is null.");
                 return "null";
             }
         } catch (SQLException ex) {
@@ -132,7 +172,7 @@ public class SQLConnect {
     */
     public static void main(String[] args) {
         connect();
-        System.out.println("This database driver is " + driverName());
+        System.out.println("This database driver is " + getDriverName());
         close();
     }
 }
