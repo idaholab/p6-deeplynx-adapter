@@ -5,7 +5,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import java.util.HashMap;
-
+// import java.security.Key;
+// import javax.crypto.Cipher;
+// import javax.crypto.spec.SecretKeySpec;
 
 @RestController
 public class P6Controller {
@@ -92,7 +94,7 @@ public class P6Controller {
 	/**
     * Update the adapter's configuration settings.
     */
-	@PostMapping("/update") // TODO: detemrine if this endpoint is redundant
+	@PostMapping("/update") // TODO: determine if this endpoint is redundant
 	public HashMap<String, String> update(@RequestBody HashMap<String, String> payload) {
 
 		HashMap<String, String> status_map = new HashMap<String, String>();
@@ -113,21 +115,35 @@ public class P6Controller {
 	}
 
 	/**
-    * Update the adapter's configuration settings.
+    * Test
     */
-	@GetMapping("/test") // TODO: detemrine if this endpoint is redundant
+	@GetMapping("/test") // TODO: get rid of this endpoint
 	public HashMap<String, String> test() {
 
 		HashMap<String, String> status_map = new HashMap<String, String>();
+		try {
+			SQLConnect sqlconnect = new SQLConnect();
+			// status_map.put("sql_migration_success", "false");
+			// status_map.put("sql_configuration_success", "false");
+			// String text = "This is a test.";
+			// String key = System.getenv("P6_ENCRYPTION_KEY");
+			// Key aesKey = new SecretKeySpec(key.getBytes(), "AES");
+			// Cipher cipher = Cipher.getInstance("AES");
+			// cipher.init(Cipher.ENCRYPT_MODE, aesKey);
+			// byte[] encrypted = cipher.doFinal(text.getBytes());
+			// status_map.put("enc", new String(encrypted));
+			// cipher.init(Cipher.DECRYPT_MODE, aesKey);
+			// String decrypted = new String(cipher.doFinal(encrypted));
+			// status_map.put("dec", decrypted);
 
-		SQLConnect sqlconnect = new SQLConnect();
-		status_map.put("sql_migration_success", "false");
-		status_map.put("sql_configuration_success", "false");
-
-		if (sqlconnect.connect()) {
-			sqlconnect.getConnections();
-			sqlconnect.close();
+			if (sqlconnect.connect()) {
+				sqlconnect.getConnections();
+				sqlconnect.close();
+			}
+		} catch(Exception e) {
+			status_map.put("failed", "true");
 		}
+		
 
 		return status_map;
 	}

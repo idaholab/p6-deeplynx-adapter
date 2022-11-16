@@ -7,8 +7,13 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.ResultSet;
 
+import java.security.Key;
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
+
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.Base64;
 
 /**
 * Class for connecting to the adapter's SQLite instance, for storing 
@@ -82,29 +87,40 @@ public class SQLConnect {
     */
     public static boolean addConnection(HashMap<String, String> connection_map) {
         try {
-            if (conn != null) {
-                // initialize statement
-                Statement stmt = conn.createStatement();
+            // setup cipher for encryption
+            String key = System.getenv("P6_ENCRYPTION_KEY");
+            Key aesKey = new SecretKeySpec(key.getBytes(), "AES");
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, aesKey);
 
-                // addition
-                SQLAction sqlact = new SQLAction();
-                stmt.execute(sqlact.addConnectionsEntry(
-                    connection_map.get("deepLynxURL"),
-                    connection_map.get("deepLynxContainer"),
-                    connection_map.get("deepLynxDatasource"),
-                    connection_map.get("deepLynxApiKey"),
-                    connection_map.get("deepLynxApiSecret"),
-                    connection_map.get("p6URL"),
-                    connection_map.get("p6Project"),
-                    connection_map.get("p6Username"),
-                    connection_map.get("p6Password")
-                ));
-                return true;
-            } else {
-                System.out.println("Connection entry to SQLite not completed (connection was null).");
-                return false;
-            }
-        } catch (SQLException ex) {
+            // encrypt sensitive values
+
+            byte[] encDLAPISecret = cipher.doFinal(connection_map.get("deepLynxApiKey").getBytes());
+            String encDLAPISecretString = Base64.getEncoder().encodeToString(encDLAPISecret);
+            byte[] encP6Password = cipher.doFinal(connection_map.get("p6Password").getBytes());
+            String encP6PasswordString = Base64.getEncoder().encodeToString(encP6Password);
+
+            // initialize statement
+            Statement stmt = conn.createStatement();
+
+            // addition
+            SQLAction sqlact = new SQLAction();
+            stmt.execute(sqlact.addConnectionsEntry(
+                connection_map.get("deepLynxURL"),
+                connection_map.get("deepLynxContainer"),
+                connection_map.get("deepLynxDatasource"),
+                connection_map.get("deepLynxApiKey"),
+                // connection_map.get("deepLynxApiSecret"),
+                encDLAPISecretString,
+                connection_map.get("p6URL"),
+                connection_map.get("p6Project"),
+                connection_map.get("p6Username"),
+                // connection_map.get("p6Password")
+                encP6PasswordString
+            ));
+            return true;
+
+        } catch (Exception ex) {
             System.out.println(ex.getMessage());
             return false;
         }
@@ -117,34 +133,41 @@ public class SQLConnect {
         ArrayList<HashMap<String, String>> connectionsList = new ArrayList<HashMap<String, String>>();
 
         try {
-            if (conn != null) {
-                // initialize statement
-                Statement stmt = conn.createStatement();
+            // setup cipher for decryption
+            String key = System.getenv("P6_ENCRYPTION_KEY");
+            Key aesKey = new SecretKeySpec(key.getBytes(), "AES");
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, aesKey);
 
-                // query
-                SQLAction sqlact = new SQLAction();
-                ResultSet rs = stmt.executeQuery(sqlact.getConnections());
-                while (rs.next()) {
-                    HashMap<String, String> tempMap = new HashMap<String, String>();
-                    tempMap.put("deepLynxURL", rs.getString("deepLynxURL"));
-                    tempMap.put("deepLynxContainer", rs.getString("deepLynxContainer"));
-                    tempMap.put("deepLynxDatasource", rs.getString("deepLynxDatasource"));
-                    tempMap.put("deepLynxApiKey", rs.getString("deepLynxApiKey"));
-                    tempMap.put("deepLynxApiSecret", rs.getString("deepLynxApiSecret"));
-                    tempMap.put("p6URL", rs.getString("p6URL"));
-                    tempMap.put("p6Project", rs.getString("p6Project"));
-                    tempMap.put("p6Username", rs.getString("p6Username"));
-                    tempMap.put("p6Password", rs.getString("p6Password"));
-                    connectionsList.add(tempMap);
-                }
-            } else {
-                System.out.println("Connection query to SQLite not completed (connection was null).");
+            // initialize statement
+            Statement stmt = conn.createStatement();
+
+            // query
+            SQLAction sqlact = new SQLAction();
+            ResultSet rs = stmt.executeQuery(sqlact.getConnections());
+            while (rs.next()) {
+                HashMap<String, String> tempMap = new HashMap<String, String>();
+
+                byte[] encDLAPISecretBytes = Base64.getDecoder().decode(rs.getString("deepLynxApiSecret").getBytes());
+                String decDLAPISecret = new String(cipher.doFinal(encDLAPISecretBytes));
+                byte[] encP6PasswordBytes = Base64.getDecoder().decode(rs.getString("p6Password").getBytes());
+                String decP6Password = new String(cipher.doFinal(encP6PasswordBytes));
+
+                tempMap.put("deepLynxURL", rs.getString("deepLynxURL"));
+                tempMap.put("deepLynxContainer", rs.getString("deepLynxContainer"));
+                tempMap.put("deepLynxDatasource", rs.getString("deepLynxDatasource"));
+                tempMap.put("deepLynxApiKey", rs.getString("deepLynxApiKey"));
+                tempMap.put("deepLynxApiSecret", decDLAPISecret);
+                tempMap.put("p6URL", rs.getString("p6URL"));
+                tempMap.put("p6Project", rs.getString("p6Project"));
+                tempMap.put("p6Username", rs.getString("p6Username"));
+                tempMap.put("p6Password", decP6Password);
+                connectionsList.add(tempMap);
             }
-        } catch (SQLException ex) {
+        } catch (Exception ex) {
             System.out.println(ex.getMessage());
         }
 
-        System.out.println(connectionsList);
         return connectionsList;
     }
 

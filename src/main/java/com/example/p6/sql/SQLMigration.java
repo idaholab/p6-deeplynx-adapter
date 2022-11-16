@@ -8,11 +8,11 @@ public class SQLMigration {
                    + "    deepLynxContainer text NOT NULL,\n"
                    + "    deepLynxDatasource text NOT NULL,\n"
                    + "    deepLynxApiKey text NOT NULL,\n"
-                   + "    deepLynxApiSecret text NOT NULL,\n"
+                   + "    deepLynxApiSecret blob NOT NULL,\n"
                    + "    p6URL text NOT NULL,\n"
                    + "    p6Project text NOT NULL,\n"
                    + "    p6Username text NOT NULL,\n"
-                   + "    p6Password text NOT NULL\n"
+                   + "    p6Password blob NOT NULL\n"
                    + ");\n";
         return sql;
     }
