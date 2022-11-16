@@ -94,7 +94,6 @@ public class SQLConnect {
             cipher.init(Cipher.ENCRYPT_MODE, aesKey);
 
             // encrypt sensitive values
-
             byte[] encDLAPISecret = cipher.doFinal(connection_map.get("deepLynxApiKey").getBytes());
             String encDLAPISecretString = Base64.getEncoder().encodeToString(encDLAPISecret);
             byte[] encP6Password = cipher.doFinal(connection_map.get("p6Password").getBytes());
@@ -148,6 +147,7 @@ public class SQLConnect {
             while (rs.next()) {
                 HashMap<String, String> tempMap = new HashMap<String, String>();
 
+                // decrypt sensitive values
                 byte[] encDLAPISecretBytes = Base64.getDecoder().decode(rs.getString("deepLynxApiSecret").getBytes());
                 String decDLAPISecret = new String(cipher.doFinal(encDLAPISecretBytes));
                 byte[] encP6PasswordBytes = Base64.getDecoder().decode(rs.getString("p6Password").getBytes());
@@ -162,6 +162,7 @@ public class SQLConnect {
                 tempMap.put("p6Project", rs.getString("p6Project"));
                 tempMap.put("p6Username", rs.getString("p6Username"));
                 tempMap.put("p6Password", decP6Password);
+                
                 connectionsList.add(tempMap);
             }
         } catch (Exception ex) {
