@@ -9,6 +9,9 @@ import org.springframework.context.ApplicationContext;
 @SpringBootApplication
 public class P6Application {
 
+	/**
+    * Main entrypoint for application
+    */
 	public static void main(String[] args) {
 		SpringApplication.run(P6Application.class, args);
 	}
