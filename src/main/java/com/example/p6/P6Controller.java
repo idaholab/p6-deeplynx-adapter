@@ -5,9 +5,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import java.util.HashMap;
-// import java.security.Key;
-// import javax.crypto.Cipher;
-// import javax.crypto.spec.SecretKeySpec;
 
 @RestController
 public class P6Controller {
@@ -32,7 +29,7 @@ public class P6Controller {
 	@GetMapping("/health")
 	public String health() {
 		SQLConnect sqlconnect = new SQLConnect();
-		
+
 		if (sqlconnect.connect()) {
 			sqlconnect.addLog("GET | /health");
 			sqlconnect.close();
