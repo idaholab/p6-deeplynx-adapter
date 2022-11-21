@@ -104,7 +104,7 @@ public class SQLConnect {
 
             // addition
             SQLAction sqlact = new SQLAction();
-            stmt.execute(sqlact.addConnectionsEntry(
+            stmt.execute(sqlact.replaceIntoConnectionsEntry(
                 connection_map.get("deepLynxURL"),
                 connection_map.get("deepLynxContainer"),
                 connection_map.get("deepLynxDatasource"),
@@ -117,6 +117,29 @@ public class SQLConnect {
                 // connection_map.get("p6Password")
                 encP6PasswordString
             ));
+            return true;
+
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+            return false;
+        }
+    }
+
+    /**
+    * Add entry to the logs table
+    */
+    public static boolean addLog(String logText) {
+        try {
+            // get time as integer, convert to string
+            long unixTime = System.currentTimeMillis() / 1000L;
+            String unixTimeString = String.valueOf(unixTime);
+
+            // initialize statement
+            Statement stmt = conn.createStatement();
+
+            // write log
+            SQLAction sqlact = new SQLAction();
+            stmt.execute(sqlact.makeLog(unixTimeString, logText));
             return true;
 
         } catch (Exception ex) {

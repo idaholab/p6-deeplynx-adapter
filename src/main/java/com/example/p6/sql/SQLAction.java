@@ -1,7 +1,7 @@
 package com.example.p6;
 
 public class SQLAction {
-    public static String addConnectionsEntry(
+    public static String replaceIntoConnectionsEntry(
         String deepLynxURL,
         String deepLynxContainer,
         String deepLynxDatasource,
@@ -30,6 +30,12 @@ public class SQLAction {
     public static String getConnections() {
         String sql = "SELECT deepLynxURL, deepLynxContainer, deepLynxDatasource, deepLynxApiKey, deepLynxApiSecret, p6URL, p6Project, p6Username, p6Password\n"
                    + "    FROM connections;";
+        return sql;
+    }
+
+    public static String makeLog(String timestamp, String log) {
+        String sql = "INSERT INTO logs (datetime, body)\n" 
+                   + "     VALUES(" + timestamp+ ", '" + log + "');\n";
         return sql;
     }
 }

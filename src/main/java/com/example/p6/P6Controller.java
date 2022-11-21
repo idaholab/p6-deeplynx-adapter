@@ -17,6 +17,12 @@ public class P6Controller {
     */
 	@GetMapping("/")
 	public String index() {
+		SQLConnect sqlconnect = new SQLConnect();
+
+		if (sqlconnect.connect()) {
+			sqlconnect.addLog("GET | /");
+			sqlconnect.close();
+		}
 		return "P6 adapter for Deep Lynx";
 	}
 
@@ -25,6 +31,12 @@ public class P6Controller {
     */
 	@GetMapping("/health")
 	public String health() {
+		SQLConnect sqlconnect = new SQLConnect();
+		
+		if (sqlconnect.connect()) {
+			sqlconnect.addLog("GET | /health");
+			sqlconnect.close();
+		}
 		return "OK";
 	}
 
@@ -40,6 +52,7 @@ public class P6Controller {
 		SQLConnect sqlconnect = new SQLConnect();
 
 		if (sqlconnect.connect()) {
+			sqlconnect.addLog("GET | /status");
 			status_map.put("sql_driver_name", sqlconnect.getDriverName());
 			sqlconnect.close();
 		}
@@ -50,10 +63,16 @@ public class P6Controller {
 	/**
     * Get the post body requirement for the configure POST endpoint
     */
-	@GetMapping("/configure")
+	@GetMapping("/configure") // TODO: delete, probably
 	public HashMap<String, String> configure_example() {
 
 		HashMap<String, String> example_map = new HashMap<String, String>();
+		SQLConnect sqlconnect = new SQLConnect();
+
+		if (sqlconnect.connect()) {
+			sqlconnect.addLog("GET | /configure");
+			sqlconnect.close();
+		}
 			
 		example_map.put("deepLynxURL", "STRING");
 		example_map.put("deepLynxContainer", "STRING");
@@ -81,6 +100,7 @@ public class P6Controller {
 		status_map.put("sql_configuration_success", "false");
 
 		if (sqlconnect.connect()) {
+			sqlconnect.addLog("POST | /configure");
 			boolean migration_success = sqlconnect.migrate();
 			status_map.put("sql_migration_success", String.valueOf(migration_success));
 			boolean configuration_success = sqlconnect.addConnection(payload);
@@ -104,6 +124,7 @@ public class P6Controller {
 		status_map.put("sql_configuration_success", "false");
 
 		if (sqlconnect.connect()) {
+			sqlconnect.addLog("POST | /update");
 			boolean migration_success = sqlconnect.migrate();
 			status_map.put("sql_migration_success", String.valueOf(migration_success));
 			boolean configuration_success = sqlconnect.addConnection(payload);
@@ -123,20 +144,9 @@ public class P6Controller {
 		HashMap<String, String> status_map = new HashMap<String, String>();
 		try {
 			SQLConnect sqlconnect = new SQLConnect();
-			// status_map.put("sql_migration_success", "false");
-			// status_map.put("sql_configuration_success", "false");
-			// String text = "This is a test.";
-			// String key = System.getenv("P6_ENCRYPTION_KEY");
-			// Key aesKey = new SecretKeySpec(key.getBytes(), "AES");
-			// Cipher cipher = Cipher.getInstance("AES");
-			// cipher.init(Cipher.ENCRYPT_MODE, aesKey);
-			// byte[] encrypted = cipher.doFinal(text.getBytes());
-			// status_map.put("enc", new String(encrypted));
-			// cipher.init(Cipher.DECRYPT_MODE, aesKey);
-			// String decrypted = new String(cipher.doFinal(encrypted));
-			// status_map.put("dec", decrypted);
 
 			if (sqlconnect.connect()) {
+				sqlconnect.addLog("POST | /test");
 				sqlconnect.getConnections();
 				sqlconnect.close();
 			}
