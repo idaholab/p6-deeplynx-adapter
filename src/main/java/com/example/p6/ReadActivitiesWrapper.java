@@ -1,4 +1,4 @@
-package gov.inl.de.p6adapter;
+package com.example.p6;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -22,9 +22,9 @@ import com.primavera.ws.p6.authentication.AuthenticationService;
 import com.primavera.ws.p6.authentication.AuthenticationServicePortType;
 import com.primavera.ws.p6.authentication.IntegrationFault;
 
-import gov.inl.de.evms.Environment;
-import gov.inl.de.evms.PlannedActivity;
-import gov.inl.de.evms.PlannedRelationship;
+import com.example.evms.Environment;
+import com.example.evms.PlannedActivity;
+import com.example.evms.PlannedRelationship;
 
 public class ReadActivitiesWrapper extends ActivitiesWrapper  {
 

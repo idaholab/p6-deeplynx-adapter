@@ -1,4 +1,4 @@
-package gov.inl.de.p6adapter;
+package com.example.p6;
 
 import org.json.*;
 
@@ -23,7 +23,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.HashMap;
 
-import gov.inl.de.evms.Environment;
+import com.example.evms.Environment;
 
 public class DeepLynxService {
 	

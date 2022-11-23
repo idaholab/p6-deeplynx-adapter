@@ -1,4 +1,4 @@
-package gov.inl.de.evms;
+package com.example.evms;
 
 import java.util.Date;
 

@@ -1,7 +1,7 @@
-package gov.inl.de.evms;
+package com.example.evms;
 
 public class Environment {
-	
+
 	private String userName;
 	private String password;
 	private String deepLynxURL;
@@ -12,7 +12,7 @@ public class Environment {
 	private String p6URL;
 	private String projectID;
 	private int timer;
-	
+
 	public Environment() {}
 
 	public Environment(String userName, String password, String deepLynxURL, String containerName, String dataSourceName, String apiKey, String apiSecret, String p6URL, String projectID, int timer) {
@@ -27,19 +27,19 @@ public class Environment {
 		this.projectID = projectID;
 		this.timer = timer;
 	}
-	
+
 	public String getPassword() {
 		return password;
 	}
-	
+
 	public void setPassword(String password) {
 		this.password = password;
 	}
-	
+
 	public String getUserName() {
 		return userName;
 	}
-	
+
 	public void setUserName(String userName) {
 		this.userName = userName;
 	}
@@ -83,7 +83,7 @@ public class Environment {
 	public void setApiSecret(String apiSecret) {
 		this.apiSecret = apiSecret;
 	}
-	
+
 	public String getP6URL() {
 		return p6URL;
 	}

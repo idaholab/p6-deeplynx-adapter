@@ -1,11 +1,11 @@
-package gov.inl.de.p6adapter;
+package com.example.p6;
 
 import java.util.Date;
 import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import gov.inl.de.evms.Environment;
+import com.example.evms.Environment;
 
 public class P6Scheduler extends TimerTask {
 

@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package gov.inl.de.p6adapter;
+package com.example.p6;
 
 
 import javax.xml.namespace.QName;

@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package gov.inl.de.p6adapter;
+package com.example.p6;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,8 +16,8 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
-import gov.inl.de.evms.Environment;
-import gov.inl.de.evms.P6Logger;
+import com.example.evms.Environment;
+import com.example.evms.P6Logger;
 
 public class P6Adapter  {
 

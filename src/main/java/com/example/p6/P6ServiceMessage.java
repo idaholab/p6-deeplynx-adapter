@@ -4,7 +4,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package gov.inl.de.p6adapter;
+package com.example.p6;
 
 import java.util.Date;
 
