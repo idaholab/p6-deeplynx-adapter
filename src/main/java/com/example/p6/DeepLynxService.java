@@ -23,10 +23,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.HashMap;
 
-// import com.example.evms.Environment;
+import com.example.p6.Environment;
 
 public class DeepLynxService {
-	
+
 	private static final Logger LOGGER = Logger.getLogger( Logger.GLOBAL_LOGGER_NAME );
 	private Environment env;
 	private String containerID;
@@ -42,7 +42,7 @@ public class DeepLynxService {
 	public void setEnv(Environment env) {
 		this.env = env;
 	}
-	
+
 	public String getContainerID() {
 		return containerID;
 	}
@@ -88,7 +88,7 @@ public class DeepLynxService {
 		this.apiKey = env.getApiKey();
 		this.apiSecret = env.getApiSecret();
 	}
-	
+
 	public boolean checkContainer() {
 		String path = env.getDeepLynxURL() + "/containers?offset=0&limit=100";
 		JSONObject obj = this.makeHTTPRequest(path, "GET", null, null);
@@ -107,8 +107,8 @@ public class DeepLynxService {
 
 		return false;
 	}
-	
-	/** 
+
+	/**
 	 * If the data source already exists and has existing imports return the latest import date.
 	 * If the data source does not exist, create it and return a default date (Date(0)).
 	 * Else return null.
@@ -155,7 +155,7 @@ public class DeepLynxService {
 				}
 			}
 		}
-		
+
 		if (!dataSourceExists) {
 			// Create new data source
 			String body = "{\"adapter_type\":\"standard\", \"active\": true, \"name\": \"" + env.getDataSourceName() + "\"}";
@@ -186,7 +186,7 @@ public class DeepLynxService {
 		String token = this.makeGETRequest(path, "GET", null, headers);
 		this.setToken(token);
 	}
-	
+
 	public void createManualImport(File importFile) {
 		String path = env.getDeepLynxURL() + "/containers/" + this.getContainerID() + "/import/datasources/" + this.getDataSourceID() + "/imports";
 		JSONObject obj = this.makeHTTPFileRequest(path, importFile);
@@ -197,7 +197,7 @@ public class DeepLynxService {
 			LOGGER.log(Level.INFO, "Successful manual import to Deep Lynx");
 		}
 	}
-	
+
 	public JSONObject makeHTTPRequest(String path, String method, String body, HashMap<String, String> headers) {
 		URL url;
 		HttpURLConnection con;
@@ -205,19 +205,19 @@ public class DeepLynxService {
 			url = new URL(path);
 			con = (HttpURLConnection) url.openConnection();
 			con.setRequestMethod(method);
-			
+
 			// add authentication header if present
 			if (this.token != null) {
 				con.setRequestProperty("Authorization", "Bearer " + this.getToken());
 			}
-			
+
 			// add user-defined headers following key value pairs
 			if (headers != null && headers.size() > 0) {
 				for (String i : headers.keySet()) {
 					con.setRequestProperty(i, headers.get(i));
 				}
 			}
-			
+
 			if (method.equals("POST")) {
 				con.setDoOutput(true);
 				con.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
@@ -229,7 +229,7 @@ public class DeepLynxService {
 				    os.write(input, 0, input.length);
 				}
 			}
-			
+
 			int status = con.getResponseCode();
 			LOGGER.log(Level.INFO, path + " status: " + status);
 			// If response code != 2XX, return null and handle accordingly
@@ -237,7 +237,7 @@ public class DeepLynxService {
 				LOGGER.log(Level.SEVERE, "Error with API call");
 				return null;
 			}
-			
+
 			BufferedReader in = new BufferedReader(
 			  new InputStreamReader(con.getInputStream()));
 			String inputLine;
@@ -247,11 +247,11 @@ public class DeepLynxService {
 			}
 			in.close();
 			con.disconnect();
-			
+
 			LOGGER.log(Level.INFO, content.toString());
 			JSONObject obj = new JSONObject(content.toString());
 			return obj;
-			
+
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
 			LOGGER.log(Level.SEVERE, e.toString(), e);
@@ -261,7 +261,7 @@ public class DeepLynxService {
 		}
 		return null;
 	}
-	
+
 	public String makeGETRequest(String path, String method, String body, HashMap<String, String> headers) {
 		URL url;
 		HttpURLConnection con;
@@ -269,17 +269,17 @@ public class DeepLynxService {
 			url = new URL(path);
 			con = (HttpURLConnection) url.openConnection();
 			con.setRequestMethod(method);
-			
+
 			// add authentication header if present
 			if (this.token != null) {
 				con.setRequestProperty("Authorization", "Bearer " + this.getToken());
 			}
-			
+
 			// add user-defined headers following key value pairs
 			for (String i : headers.keySet()) {
 				con.setRequestProperty(i, headers.get(i));
 			}
-			
+
 			int status = con.getResponseCode();
 			LOGGER.log(Level.INFO, path + " status: " + status);
 			// If response code != 2XX, return null and handle accordingly
@@ -287,7 +287,7 @@ public class DeepLynxService {
 				LOGGER.log(Level.SEVERE, "Error with API call");
 				return null;
 			}
-			
+
 			BufferedReader in = new BufferedReader(
 			  new InputStreamReader(con.getInputStream()));
 			String inputLine;
@@ -297,11 +297,11 @@ public class DeepLynxService {
 			}
 			in.close();
 			con.disconnect();
-			
+
 			String returnContent = content.toString();
 			returnContent = returnContent.replace("\"", "");
 			return returnContent;
-			
+
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
 			LOGGER.log(Level.SEVERE, e.toString(), e);
@@ -311,7 +311,7 @@ public class DeepLynxService {
 		}
 		return null;
 	}
-	
+
 	public JSONObject makeHTTPFileRequest(String path, File myFile) {
 		URL url;
 		HttpURLConnection con;
@@ -355,7 +355,7 @@ public class DeepLynxService {
 				LOGGER.log(Level.SEVERE, "Error with API call");
 				return null;
 			}
-			
+
 			BufferedReader in = new BufferedReader(
 			  new InputStreamReader(con.getInputStream()));
 			String inputLine;
@@ -365,11 +365,11 @@ public class DeepLynxService {
 			}
 			in.close();
 			con.disconnect();
-			
+
 			LOGGER.log(Level.INFO, content.toString());
 			JSONObject obj = new JSONObject(content.toString());
 			return obj;
-			
+
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
 			LOGGER.log(Level.SEVERE, e.toString(), e);

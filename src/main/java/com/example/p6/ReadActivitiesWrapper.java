@@ -22,9 +22,9 @@ import com.primavera.ws.p6.authentication.AuthenticationService;
 import com.primavera.ws.p6.authentication.AuthenticationServicePortType;
 import com.primavera.ws.p6.authentication.IntegrationFault;
 
-// import com.example.evms.Environment;
-// import com.example.evms.PlannedActivity;
-// import com.example.evms.PlannedRelationship;
+import com.example.p6.Environment;
+import com.example.p6.PlannedActivity;
+import com.example.p6.PlannedRelationship;
 
 public class ReadActivitiesWrapper extends ActivitiesWrapper  {
 
