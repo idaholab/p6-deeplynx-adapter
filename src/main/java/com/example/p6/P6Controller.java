@@ -6,9 +6,18 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import java.util.HashMap;
+import java.util.ArrayList;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Timer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @RestController
 public class P6Controller {
+
+	private static final Logger LOGGER = Logger.getLogger( Logger.GLOBAL_LOGGER_NAME );
 
 	/**
     * Base endpoint
@@ -71,7 +80,7 @@ public class P6Controller {
 			sqlconnect.addLog("GET | /configure");
 			sqlconnect.close();
 		}
-			
+
 		example_map.put("deepLynxURL", "STRING");
 		example_map.put("deepLynxContainer", "STRING");
 		example_map.put("deepLynxDatasource", "STRING");
@@ -134,9 +143,9 @@ public class P6Controller {
 	}
 
 	/**
-    * Test
+    * Starts the adapter run
     */
-	@GetMapping("/test") // TODO: get rid of this endpoint
+	@GetMapping("/startAdapter")
 	public HashMap<String, String> test() {
 
 		HashMap<String, String> status_map = new HashMap<String, String>();
@@ -145,13 +154,37 @@ public class P6Controller {
 
 			if (sqlconnect.connect()) {
 				sqlconnect.addLog("POST | /test");
-				sqlconnect.getConnections();
+				ArrayList<HashMap<String, String>> connections = sqlconnect.getConnections();
+				status_map = connections.get(connections.size() - 1);
 				sqlconnect.close();
 			}
-		} catch(Exception e) {
-			status_map.put("failed", "true");
+
+			try {
+			P6Logger.setup();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
-		
+
+    	LOGGER.log(Level.INFO, "Starting P6Adapter...");
+    	System.out.println("P6Adapter has started. Please see the generated logs in Log.txt");
+
+			ReadActivitiesWrapper readActivitiesWrapper = new ReadActivitiesWrapper();
+
+    	try {
+			Environment env = new Environment(status_map.get("p6Username"), status_map.get("p6Password"), status_map.get("deepLynxURL"), status_map.get("deepLynxContainer"), status_map.get("deepLynxDatasource"), status_map.get("deepLynxApiKey"), status_map.get("deepLynxApiSecret"), status_map.get("p6URL"), status_map.get("p6Project"), 10000);
+			Timer time = new Timer();
+			P6Scheduler scheduler = new P6Scheduler(readActivitiesWrapper, env, 1);
+			time.schedule(scheduler, 0, env.getTimer());
+		} catch (Exception e) {
+			System.out.println("Exception. StackTrace: ");
+			e.printStackTrace();
+			LOGGER.log(Level.SEVERE, e.toString(), e);
+		}
+
+	} catch(Exception e) {
+		status_map.put("failed", "true");
+	}
+
 
 		return status_map;
 	}

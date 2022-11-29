@@ -1,4 +1,4 @@
-package com.example.evms;
+package com.example.p6;
 
 public class Environment {
 

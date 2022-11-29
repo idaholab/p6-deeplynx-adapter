@@ -1,10 +1,3 @@
-/*
- /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package com.example.p6;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -29,11 +22,11 @@ public class P6ServiceResponse {
     protected byte[] returnObject;
     /**
      * Gets the value of the status property.
-     * 
+     *
      * @return
      *     possible object is
      *     {@link String }
-     *     
+     *
      */
     public String getStatus() {
         return status;
@@ -41,11 +34,11 @@ public class P6ServiceResponse {
 
     /**
      * Sets the value of the status property.
-     * 
+     *
      * @param value
      *     allowed object is
      *     {@link String }
-     *     
+     *
      */
     public void setStatus(String value) {
         this.status = value;
@@ -53,11 +46,11 @@ public class P6ServiceResponse {
 
     /**
      * Gets the value of the msg property.
-     * 
+     *
      * @return
      *     possible object is
      *     {@link String }
-     *     
+     *
      */
     public String getMsg() {
         return msg;
@@ -65,11 +58,11 @@ public class P6ServiceResponse {
 
     /**
      * Sets the value of the msg property.
-     * 
+     *
      * @param value
      *     allowed object is
      *     {@link String }
-     *     
+     *
      */
     public void setMsg(String value) {
         this.msg = value;
@@ -83,6 +76,3 @@ public class P6ServiceResponse {
         return returnObject;
     }
 }
-
-
-
