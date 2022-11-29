@@ -23,8 +23,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.HashMap;
 
-import com.example.p6.Environment;
-
 public class DeepLynxService {
 
 	private static final Logger LOGGER = Logger.getLogger( Logger.GLOBAL_LOGGER_NAME );
@@ -34,14 +32,6 @@ public class DeepLynxService {
 	private String apiKey = null;
 	private String apiSecret = null;
 	private String token = null;
-
-	public Environment getEnv() {
-		return env;
-	}
-
-	public void setEnv(Environment env) {
-		this.env = env;
-	}
 
 	public String getContainerID() {
 		return containerID;
@@ -57,22 +47,6 @@ public class DeepLynxService {
 
 	public void setDataSourceID(String dataSourceID) {
 		this.dataSourceID = dataSourceID;
-	}
-
-	public String getApiKey() {
-		return apiKey;
-	}
-
-	public void setApiKey(String apiKey) {
-		this.apiKey = apiKey;
-	}
-
-	public String getApiSecret() {
-		return apiSecret;
-	}
-
-	public void setApiSecret(String apiSecret) {
-		this.apiSecret = apiSecret;
 	}
 
 	public String getToken() {
@@ -177,10 +151,13 @@ public class DeepLynxService {
 	public void authenticate() {
 		String path = env.getDeepLynxURL() + "/oauth/token";
 
+		System.out.println(this.apiKey);
+		System.out.println(this.apiSecret);
+
 		// supply api keys and expiry via hashmap
 		HashMap<String, String> headers = new HashMap<String, String>();
-		headers.put("x-api-key", getApiKey());
-		headers.put("x-api-secret", getApiSecret());
+		headers.put("x-api-key", this.apiKey);
+		headers.put("x-api-secret", this.apiSecret);
 		headers.put("x-api-expiry", "12h");
 
 		String token = this.makeGETRequest(path, "GET", null, headers);

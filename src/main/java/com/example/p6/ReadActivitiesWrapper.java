@@ -22,10 +22,6 @@ import com.primavera.ws.p6.authentication.AuthenticationService;
 import com.primavera.ws.p6.authentication.AuthenticationServicePortType;
 import com.primavera.ws.p6.authentication.IntegrationFault;
 
-import com.example.p6.Environment;
-import com.example.p6.PlannedActivity;
-import com.example.p6.PlannedRelationship;
-
 public class ReadActivitiesWrapper extends ActivitiesWrapper  {
 
 	private static final Logger LOGGER = Logger.getLogger( Logger.GLOBAL_LOGGER_NAME );
@@ -63,10 +59,7 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper  {
     	dlService = new DeepLynxService(env);
     	P6ServiceResponse response = new P6ServiceResponse();
 
-        // first authenticate with Deep Lynx if api key and secret supplied
-        if (dlService.getApiSecret() != null) {
-            dlService.authenticate();
-        }
+			dlService.authenticate();
 
     	boolean containerExists = dlService.checkContainer();
     	if (!containerExists) {
@@ -115,6 +108,7 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper  {
 
         try {
 			String p6url = env.getP6URL() + "AuthenticationService?wsdl";
+
 			AuthenticationService service = new AuthenticationService(new URL(p6url));
 			AuthenticationServicePortType servicePort = service.getAuthenticationServiceSOAP12PortHttp();
 			session.setUserNameToken((BindingProvider)servicePort);
@@ -222,7 +216,6 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper  {
 		public P6ServiceResponse mapRelationships(){
 			P6ServiceResponse response = new P6ServiceResponse();
 
-
 			List<RelationshipFieldType> fields = new ArrayList<RelationshipFieldType>();
 
 			// Must specify which fields you desire to retrieve
@@ -231,7 +224,6 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper  {
 			fields.add(RelationshipFieldType.SUCCESSOR_ACTIVITY_ID);
 			fields.add(RelationshipFieldType.SUCCESSOR_PROJECT_ID);
 			fields.add(RelationshipFieldType.LAST_UPDATE_DATE);
-
 
 			JSONArray relationshipList = new JSONArray();
 

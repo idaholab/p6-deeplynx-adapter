@@ -5,20 +5,16 @@ import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.example.p6.Environment;
-
 public class P6Scheduler extends TimerTask {
 
 	private static final Logger LOGGER = Logger.getLogger( Logger.GLOBAL_LOGGER_NAME );
 
 	ReadActivitiesWrapper readActivitiesWrapper;
-	// ReadRelationshipsWrapper readRelationshipsWrapper;
 	Environment env;
 	int databaseInstance;
 
 	public P6Scheduler(ReadActivitiesWrapper readActivitiesWrapper, Environment env, int databaseInstance) {
 		this.readActivitiesWrapper = readActivitiesWrapper;
-		// this.readRelationshipsWrapper = readRelationshipsWrapper;
 		this.env = env;
 		this.databaseInstance = databaseInstance;
 	}
