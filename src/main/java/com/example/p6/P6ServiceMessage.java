@@ -9,7 +9,7 @@ import java.util.Date;
 
 public class P6ServiceMessage {
 
-    public enum MessageType {ACTIVITYCODE, RELATIONSHIPCODE, UDF, RESOURCE, APPLICTION, PROJECT}
+    public enum MessageType {ACTIVITYCODE, RELATIONSHIPCODE, UDF, RESOURCE, APPLICATION, PROJECT}
     private MessageType type;
     private String message;
     private Date dateTime;

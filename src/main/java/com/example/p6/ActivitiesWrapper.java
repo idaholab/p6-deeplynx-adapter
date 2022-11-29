@@ -32,7 +32,7 @@ public class ActivitiesWrapper {
             wsdlURL = new URL(url);
         } catch (MalformedURLException e) {
             e.printStackTrace();
-            addError(P6ServiceMessage.MessageType.APPLICTION, "Error creating URL for ActivityService.  URL: " + url + " \nMalformedURLException thrown: " + e.getMessage());
+            addError(P6ServiceMessage.MessageType.APPLICATION, "Error creating URL for ActivityService.  URL: " + url + " \nMalformedURLException thrown: " + e.getMessage());
         }
 
         ActivityService service = new ActivityService(wsdlURL);
@@ -58,7 +58,7 @@ public class ActivitiesWrapper {
             wsdlURL = new URL(url);
         } catch (MalformedURLException e) {
             e.printStackTrace();
-            addError(P6ServiceMessage.MessageType.APPLICTION, "Error creating URL for ActivityService.  URL: " + url + " \nMalformedURLException thrown: " + e.getMessage());
+            addError(P6ServiceMessage.MessageType.APPLICATION, "Error creating URL for ActivityService.  URL: " + url + " \nMalformedURLException thrown: " + e.getMessage());
         }
 
         ActivityService service = new ActivityService(wsdlURL);
@@ -84,7 +84,7 @@ public class ActivitiesWrapper {
             wsdlURL = new URL(url);
         } catch (MalformedURLException e) {
             e.printStackTrace();
-            addError(P6ServiceMessage.MessageType.APPLICTION, "Error creating URL for ActivityService.  URL: " + url + " \nMalformedURLException thrown: " + e.getMessage());
+            addError(P6ServiceMessage.MessageType.APPLICATION, "Error creating URL for ActivityService.  URL: " + url + " \nMalformedURLException thrown: " + e.getMessage());
         }
 
         ActivityService service = new ActivityService(wsdlURL);
@@ -110,7 +110,7 @@ public class ActivitiesWrapper {
               wsdlURL = new URL(url);
           } catch (MalformedURLException e) {
               e.printStackTrace();
-              addError(P6ServiceMessage.MessageType.APPLICTION, "Error creating URL for RelationshipService.  URL: " + url + " \nMalformedURLException thrown: " + e.getMessage());
+              addError(P6ServiceMessage.MessageType.APPLICATION, "Error creating URL for RelationshipService.  URL: " + url + " \nMalformedURLException thrown: " + e.getMessage());
           }
 
           RelationshipService service = new RelationshipService(wsdlURL);

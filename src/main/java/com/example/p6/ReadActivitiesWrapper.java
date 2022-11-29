@@ -186,7 +186,7 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper  {
         StringBuffer msg = new StringBuffer("");
 
         for (P6ServiceMessage message: errors){
-            if (message.getType() == P6ServiceMessage.MessageType.APPLICTION){
+            if (message.getType() == P6ServiceMessage.MessageType.APPLICATION){
                 failure = true;
             }
             else {
@@ -262,7 +262,7 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper  {
 				StringBuffer msg = new StringBuffer("");
 
 				for (P6ServiceMessage message: errors){
-						if (message.getType() == P6ServiceMessage.MessageType.APPLICTION){
+						if (message.getType() == P6ServiceMessage.MessageType.APPLICATION){
 								failure = true;
 						}
 						else {

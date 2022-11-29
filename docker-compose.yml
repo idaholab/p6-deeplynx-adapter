@@ -12,4 +12,4 @@ services:
       - "${P6_ADAPTER_PORT}:${P6_ADAPTER_PORT}"
     platform: "linux/amd64"
     extra_hosts:
-      - "p6-prd-mw:10.53.20.38"
+      - "${P6_HOSTNAME}:${P6_IP_ADDRESS}"
