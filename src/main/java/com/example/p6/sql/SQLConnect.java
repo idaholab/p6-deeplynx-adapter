@@ -16,11 +16,11 @@ import java.util.ArrayList;
 import java.util.Base64;
 
 /**
-* Class for connecting to the adapter's SQLite instance, for storing 
+* Class for connecting to the adapter's SQLite instance, for storing
 *    configuration data and for logging activity and access.
 */
 public class SQLConnect {
-     
+
     public static Connection conn = null;
     private static String url = "jdbc:sqlite:/var/app/sqlite/p6.db"; // TODO: replace with env var reference.
     private static DatabaseMetaData mdata = null;
@@ -94,7 +94,7 @@ public class SQLConnect {
             cipher.init(Cipher.ENCRYPT_MODE, aesKey);
 
             // encrypt sensitive values
-            byte[] encDLAPISecret = cipher.doFinal(connection_map.get("deepLynxApiKey").getBytes());
+            byte[] encDLAPISecret = cipher.doFinal(connection_map.get("deepLynxApiSecret").getBytes());
             String encDLAPISecretString = Base64.getEncoder().encodeToString(encDLAPISecret);
             byte[] encP6Password = cipher.doFinal(connection_map.get("p6Password").getBytes());
             String encP6PasswordString = Base64.getEncoder().encodeToString(encP6Password);
@@ -109,12 +109,10 @@ public class SQLConnect {
                 connection_map.get("deepLynxContainer"),
                 connection_map.get("deepLynxDatasource"),
                 connection_map.get("deepLynxApiKey"),
-                // connection_map.get("deepLynxApiSecret"),
                 encDLAPISecretString,
                 connection_map.get("p6URL"),
                 connection_map.get("p6Project"),
                 connection_map.get("p6Username"),
-                // connection_map.get("p6Password")
                 encP6PasswordString
             ));
             return true;
@@ -185,7 +183,7 @@ public class SQLConnect {
                 tempMap.put("p6Project", rs.getString("p6Project"));
                 tempMap.put("p6Username", rs.getString("p6Username"));
                 tempMap.put("p6Password", decP6Password);
-                
+
                 connectionsList.add(tempMap);
             }
         } catch (Exception ex) {
@@ -211,7 +209,7 @@ public class SQLConnect {
             System.out.println(ex.getMessage());
             return "null";
         }
-        
+
     }
 
     /**
