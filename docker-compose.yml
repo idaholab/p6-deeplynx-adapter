@@ -9,7 +9,7 @@ services:
     env_file:
       - .env
     ports:
-      - "${P6_ADAPTER_PORT}:${P6_ADAPTER_PORT}"
+      - "${P6_ADAPTER_PORT}:8080"
     platform: "linux/amd64"
     extra_hosts:
       - "${P6_HOSTNAME}:${P6_IP_ADDRESS}"

@@ -22,7 +22,7 @@ import java.util.Base64;
 public class SQLConnect {
 
     public static Connection conn = null;
-    private static String url = "jdbc:sqlite:/var/app/sqlite/p6.db"; // TODO: replace with env var reference.
+    private static String url = System.getenv("P6_DB_LOC"); // TODO: replace with env var reference.
     private static DatabaseMetaData mdata = null;
 
     /**
@@ -84,7 +84,7 @@ public class SQLConnect {
     }
 
     /**
-    * Add entry to the connections table
+    * Add entry to the connections table, it encrypts the key/password values
     */
     public static boolean addConnection(HashMap<String, String> connection_map) {
         try {
