@@ -32,7 +32,8 @@ public class SQLConnect {
         try {
             conn = DriverManager.getConnection(url);
             System.out.println("Connection to SQLite has been established.");
-            return true;
+            boolean migrateSuccess = migrate();
+            return migrateSuccess;
         } catch (SQLException e) {
             System.out.println(e.getMessage());
             return false;

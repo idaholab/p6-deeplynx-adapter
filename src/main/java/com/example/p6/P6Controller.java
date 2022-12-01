@@ -103,13 +103,13 @@ public class P6Controller {
 		HashMap<String, String> status_map = new HashMap<String, String>();
 
 		SQLConnect sqlconnect = new SQLConnect();
-		status_map.put("sql_migration_success", "false");
+		// status_map.put("sql_migration_success", "false");
 		status_map.put("sql_configuration_success", "false");
 
 		if (sqlconnect.connect()) {
 			sqlconnect.addLog("POST | /configure");
-			boolean migration_success = sqlconnect.migrate();
-			status_map.put("sql_migration_success", String.valueOf(migration_success));
+			// boolean migration_success = sqlconnect.migrate();
+			// status_map.put("sql_migration_success", String.valueOf(migration_success));
 			boolean configuration_success = sqlconnect.addConnection(payload);
 			status_map.put("sql_configuration_success", String.valueOf(configuration_success));
 			sqlconnect.close();
@@ -127,13 +127,13 @@ public class P6Controller {
 		HashMap<String, String> status_map = new HashMap<String, String>();
 
 		SQLConnect sqlconnect = new SQLConnect();
-		status_map.put("sql_migration_success", "false");
+		// status_map.put("sql_migration_success", "false");
 		status_map.put("sql_configuration_success", "false");
 
 		if (sqlconnect.connect()) {
 			sqlconnect.addLog("POST | /update");
-			boolean migration_success = sqlconnect.migrate();
-			status_map.put("sql_migration_success", String.valueOf(migration_success));
+			// boolean migration_success = sqlconnect.migrate();
+			// status_map.put("sql_migration_success", String.valueOf(migration_success));
 			boolean configuration_success = sqlconnect.addConnection(payload);
 			status_map.put("sql_configuration_success", String.valueOf(configuration_success));
 			sqlconnect.close();
