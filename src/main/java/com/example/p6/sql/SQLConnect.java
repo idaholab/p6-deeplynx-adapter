@@ -138,11 +138,12 @@ public class SQLConnect {
 
             // write log
             SQLAction sqlact = new SQLAction();
+            System.out.println(unixTimeString + " | " + logText);
             stmt.execute(sqlact.makeLog(unixTimeString, logText));
             return true;
 
         } catch (Exception ex) {
-            System.out.println(ex.getMessage());
+            System.out.println("addLog() FAILURE | " + ex.getMessage());
             return false;
         }
     }

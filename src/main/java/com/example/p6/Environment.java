@@ -11,11 +11,11 @@ public class Environment {
 	private String apiSecret;
 	private String p6URL;
 	private String projectID;
-	private int timer;
+	// private int timer;
 
 	public Environment() {}
 
-	public Environment(String userName, String password, String deepLynxURL, String containerName, String dataSourceName, String apiKey, String apiSecret, String p6URL, String projectID, int timer) {
+	public Environment(String userName, String password, String deepLynxURL, String containerName, String dataSourceName, String apiKey, String apiSecret, String p6URL, String projectID) {
 		this.userName = userName;
 		this.password = password;
 		this.deepLynxURL = deepLynxURL;
@@ -25,7 +25,7 @@ public class Environment {
 		this.apiSecret = apiSecret;
 		this.p6URL = p6URL;
 		this.projectID = projectID;
-		this.timer = timer;
+		// this.timer = timer;
 	}
 
 	public String getPassword() {
@@ -100,12 +100,12 @@ public class Environment {
 		this.projectID = projectID;
 	}
 
-	public int getTimer() {
-		return timer;
-	}
+	// public int getTimer() {
+	// 	return timer;
+	// }
 
-	public void setTimer(int timer) {
-		this.timer = timer;
-	}
+	// public void setTimer(int timer) {
+	// 	this.timer = timer;
+	// }
 
 }
