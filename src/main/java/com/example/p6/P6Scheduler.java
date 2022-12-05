@@ -30,5 +30,8 @@ public class P6Scheduler extends TimerTask {
 		// todo: mapRelationships must be after mapActivities; this should probably be refactored a little
 		P6ServiceResponse response_rels = readActivitiesWrapper.mapRelationships();
 		LOGGER.log(Level.INFO, "P6 Service Response_rels: " + response_rels.getMsg());
+
+		P6ServiceResponse response_codes = readActivitiesWrapper.mapActivityCodeAssignments(this.env);
+		LOGGER.log(Level.INFO, "P6 Service Response_codes: " + response_codes.getMsg());
 	}
 }

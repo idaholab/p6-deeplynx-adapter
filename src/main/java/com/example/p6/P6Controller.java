@@ -171,7 +171,7 @@ public class P6Controller {
 			ReadActivitiesWrapper readActivitiesWrapper = new ReadActivitiesWrapper();
 
     	try {
-			Environment env = new Environment(status_map.get("p6Username"), status_map.get("p6Password"), status_map.get("deepLynxURL"), status_map.get("deepLynxContainer"), status_map.get("deepLynxDatasource"), status_map.get("deepLynxApiKey"), status_map.get("deepLynxApiSecret"), status_map.get("p6URL"), status_map.get("p6Project"), 10000);
+			Environment env = new Environment(status_map.get("p6Username"), status_map.get("p6Password"), status_map.get("deepLynxURL"), status_map.get("deepLynxContainer"), status_map.get("deepLynxDatasource"), status_map.get("deepLynxApiKey"), status_map.get("deepLynxApiSecret"), status_map.get("p6URL"), status_map.get("p6Project"), 3600000);
 			Timer time = new Timer();
 			P6Scheduler scheduler = new P6Scheduler(readActivitiesWrapper, env, 1);
 			time.schedule(scheduler, 0, env.getTimer());
