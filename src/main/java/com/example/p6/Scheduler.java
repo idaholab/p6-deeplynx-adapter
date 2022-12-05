@@ -11,7 +11,7 @@ import java.util.ArrayList;
 @Component
 public class Scheduler {
 
-	@Scheduled(fixedRate = 15000)
+	@Scheduled(fixedRate = 15000) // TODO: read from an environment variable
 	public void adapterLoop() {
 		try {
 			SQLConnect sqlconnect = new SQLConnect();
