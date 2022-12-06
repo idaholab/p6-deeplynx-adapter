@@ -3,25 +3,9 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: p6-adapter
+  name: p6-adapter-dev
   labels:
-    name: p6-adapter
-
-
-# ConfigMap
----
-apiVersion: v1
-data:
-  P6_ADAPTER_PORT: "8080"
-  P6_ENCRYPTION_KEY: h!ge98E*FHJk3w&$
-  P6_HOSTNAME: p6-prd-mw
-  P6_IP_ADDRESS: 10.53.20.38
-kind: ConfigMap
-metadata:
-  labels:
-    app: app
-  name: env
-  namespace: p6-adapter
+    name: p6-adapter-dev
 
 # Persistent Volume
 ---
@@ -29,7 +13,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: app-pv
-  namespace: p6-adapter
+  namespace: p6-adapter-dev
 spec:
   accessModes:
     - ReadWriteOnce
@@ -38,12 +22,13 @@ spec:
       storage: 100Mi
 
 # Deployment
+# The ConfigMap is a GitHub secret, and the SecretKey is on the cluster
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: app
-  namespace: p6-adapter
+  namespace: p6-adapter-dev
 spec:
   replicas: 1
   selector:
@@ -60,13 +45,8 @@ spec:
         - env:
             - name: P6_ADAPTER_PORT
               valueFrom:
-                configMapKeyRef:
+                secretKeyRef:
                   key: P6_ADAPTER_PORT
-                  name: env
-            - name: P6_ENCRYPTION_KEY
-              valueFrom:
-                configMapKeyRef:
-                  key: P6_ENCRYPTION_KEY
                   name: env
             - name: P6_HOSTNAME
               valueFrom:
@@ -78,7 +58,12 @@ spec:
                 configMapKeyRef:
                   key: P6_IP_ADDRESS
                   name: env
-          image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:adapter-dev-latest
+            - name: P6_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: P6_ENCRYPTION_KEY
+                  name: p6-encryption-key
+          image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:dev-latest
           imagePullPolicy: Always
           name: app
           ports:
@@ -104,7 +89,7 @@ metadata:
   labels:
     app: app
   name: app-ingress
-  namespace: p6-adapter
+  namespace: p6-adapter-dev
 spec:
   ports:
     - name: "8080"
@@ -113,15 +98,13 @@ spec:
   selector:
     app: app
 
-
-
 # Ingress
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: app-ingress
-  namespace: p6-adapter
+  namespace: p6-adapter-dev
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/configuration-snippet: |
@@ -134,7 +117,7 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-send-timeout: '3600'
   spec:
   rules:
-    - host: p6-adapter.azuredev.inl.gov
+    - host: ${NETWORKING_HOST}
       http:
         paths:
           - path: /
