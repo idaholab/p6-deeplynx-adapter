@@ -4,7 +4,7 @@ services:
   app:
     build: .
     volumes:
-      - ./src/main/java/com/example/p6:/var/app/main/java/com/example/p6
+      - ./src/main/java/com/example/p6:/var/app/main/java/com/example/p6 #TODO: make dev and prod version of yaml
       - ./src/sqlite:/var/app/sqlite
     env_file:
       - .env
