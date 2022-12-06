@@ -2,6 +2,7 @@ package com.example.p6;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -11,7 +12,11 @@ import java.util.ArrayList;
 @Component
 public class Scheduler {
 
-	@Scheduled(fixedRate = 15000) // TODO: read from an environment variable
+	// @Value("${fixed-rate.in.milliseconds}")
+  //   private static final long interval;
+
+	// @Scheduled(fixedRate = Scheduler.interval)
+	@Scheduled(fixedRate = 3600000)
 	public void adapterLoop() {
 		try {
 			SQLConnect sqlconnect = new SQLConnect();
@@ -30,13 +35,12 @@ public class Scheduler {
 						connection.get("p6Username")
 						,connection.get("p6Password")
 						,connection.get("deepLynxURL")
-						,connection.get("deepLynxContainer")
+						,connection.get("deepLynxContainerId")
 						,connection.get("deepLynxDatasource")
 						,connection.get("deepLynxApiKey")
 						,connection.get("deepLynxApiSecret")
 						,connection.get("p6URL")
 						,connection.get("p6Project")
-						//, 10000
 					);
 
 
@@ -48,6 +52,10 @@ public class Scheduler {
 					P6ServiceResponse response_rels = readActivitiesWrapper.mapRelationships();
 					// LOGGER.log(Level.INFO, "P6 Service Response_rels: " + response_rels.getMsg());
 					sqlconnect.addLog("P6 Service Response_rels: " + response_rels.getMsg());
+
+					P6ServiceResponse response_codes = readActivitiesWrapper.mapActivityCodeAssignments(env);
+					// LOGGER.log(Level.INFO, "P6 Service Response_codes: " + response_codes.getMsg());
+					sqlconnect.addLog("P6 Service Response_codes: " + response_codes.getMsg());
 				}
 				sqlconnect.close();
 

@@ -5,7 +5,7 @@ public class Environment {
 	private String userName;
 	private String password;
 	private String deepLynxURL;
-	private String containerName;
+	private String containerID;
 	private String dataSourceName;
 	private String apiKey;
 	private String apiSecret;
@@ -15,11 +15,11 @@ public class Environment {
 
 	public Environment() {}
 
-	public Environment(String userName, String password, String deepLynxURL, String containerName, String dataSourceName, String apiKey, String apiSecret, String p6URL, String projectID) {
+	public Environment(String userName, String password, String deepLynxURL, String containerID, String dataSourceName, String apiKey, String apiSecret, String p6URL, String projectID) {
 		this.userName = userName;
 		this.password = password;
 		this.deepLynxURL = deepLynxURL;
-		this.containerName = containerName;
+		this.containerID = containerID;
 		this.dataSourceName = dataSourceName;
 		this.apiKey = apiKey;
 		this.apiSecret = apiSecret;
@@ -52,12 +52,12 @@ public class Environment {
 		this.deepLynxURL = deepLynxURL;
 	}
 
-	public String getContainerName() {
-		return containerName;
+	public String getContainerId() {
+		return containerID;
 	}
 
-	public void setContainerName(String containerName) {
-		this.containerName = containerName;
+	public void setContainerId(String containerID) {
+		this.containerID = containerID;
 	}
 
 	public String getDataSourceName() {

@@ -39,7 +39,7 @@ The following endpoints will be used to interact with the adapter:
         <td>/configure</td><td>POST</td><td>
             <pre>{
     "deepLynxURL": "https://STRING.com",
-    "deepLynxContainer": "STRING",
+    "deepLynxContainerId": "STRING",
     "deepLynxDatasource": "STRING",
     "deepLynxApiKey": "STRING",
     "deepLynxApiSecret": "STRING",
@@ -59,7 +59,7 @@ The following endpoints will be used to interact with the adapter:
         <td>/update</td><td>POST</td><td>
             <pre>{
     "deepLynxURL": "https://STRING.com",
-    "deepLynxContainer": "STRING",
+    "deepLynxContainerId": "STRING",
     "deepLynxDatasource": "STRING",
     "deepLynxApiKey": "STRING",
     "deepLynxApiSecret": "STRING",

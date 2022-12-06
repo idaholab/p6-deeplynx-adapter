@@ -82,7 +82,7 @@ public class P6Controller {
 		}
 
 		example_map.put("deepLynxURL", "STRING");
-		example_map.put("deepLynxContainer", "STRING");
+		example_map.put("deepLynxContainerId", "STRING");
 		example_map.put("deepLynxDatasource", "STRING");
 		example_map.put("deepLynxApiKey", "STRING");
 		example_map.put("deepLynxApiSecret", "STRING");
@@ -141,52 +141,5 @@ public class P6Controller {
 
 		return status_map;
 	}
-
-	/**
-    * Starts the adapter run
-    */
-	// @GetMapping("/startAdapter")
-	// public HashMap<String, String> test() {
-
-	// 	HashMap<String, String> status_map = new HashMap<String, String>();
-	// 	try {
-	// 		SQLConnect sqlconnect = new SQLConnect();
-
-	// 		if (sqlconnect.connect()) {
-	// 			sqlconnect.addLog("POST | /test");
-	// 			ArrayList<HashMap<String, String>> connections = sqlconnect.getConnections();
-	// 			status_map = connections.get(connections.size() - 1);
-	// 			sqlconnect.close();
-	// 		}
-
-	// 		try {
-	// 		P6Logger.setup();
-	// 	} catch (IOException e) {
-	// 		e.printStackTrace();
-	// 	}
-
-    // 	LOGGER.log(Level.INFO, "Starting P6Adapter...");
-    // 	System.out.println("P6Adapter has started. Please see the generated logs in Log.txt");
-
-	// 		ReadActivitiesWrapper readActivitiesWrapper = new ReadActivitiesWrapper();
-
-    // 	try {
-	// 		Environment env = new Environment(status_map.get("p6Username"), status_map.get("p6Password"), status_map.get("deepLynxURL"), status_map.get("deepLynxContainer"), status_map.get("deepLynxDatasource"), status_map.get("deepLynxApiKey"), status_map.get("deepLynxApiSecret"), status_map.get("p6URL"), status_map.get("p6Project"), 10000);
-	// 		Timer time = new Timer();
-	// 		P6Scheduler scheduler = new P6Scheduler(readActivitiesWrapper, env, 1);
-	// 		time.schedule(scheduler, 0, env.getTimer());
-	// 	} catch (Exception e) {
-	// 		System.out.println("Exception. StackTrace: ");
-	// 		e.printStackTrace();
-	// 		LOGGER.log(Level.SEVERE, e.toString(), e);
-	// 	}
-
-	// } catch(Exception e) {
-	// 	status_map.put("failed", "true");
-	// }
-
-
-	// 	return status_map;
-	// }
 
 }
