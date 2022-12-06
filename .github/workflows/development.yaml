@@ -41,6 +41,7 @@ jobs:
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
         run: |
           cd $GITHUB_WORKSPACE
+          echo kubernetes/development.yaml
           echo $KUBE_CONFIGMAP >> kubernetes/development.yaml
           echo kubernetes/development.yaml
           envsubst < kubernetes/development.yaml > kubernetes/development.yaml
