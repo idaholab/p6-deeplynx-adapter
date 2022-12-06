@@ -42,6 +42,7 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE
           echo $KUBE_CONFIGMAP >> kubernetes/development.yaml
+          echo kubernetes/development.yaml
           envsubst < kubernetes/development.yaml > kubernetes/development.yaml
 
       - uses: azure/setup-kubectl@v3
