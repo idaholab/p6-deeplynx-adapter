@@ -4,12 +4,10 @@ services:
   app:
     build: .
     volumes:
-      - ./src/main/java/com/example/p6:/var/app/main/java/com/example/p6
       - ./src/sqlite:/var/app/sqlite
     env_file:
       - .env
     ports:
-      - "${P6_ADAPTER_PORT}:${P6_ADAPTER_PORT}"
-    platform: "linux/amd64"
+      - "8080:8080"
     extra_hosts:
       - "${P6_HOSTNAME}:${P6_IP_ADDRESS}"
