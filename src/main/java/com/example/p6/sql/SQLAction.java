@@ -3,7 +3,7 @@ package com.example.p6;
 public class SQLAction {
     public static String replaceIntoConnectionsEntry(
         String deepLynxURL,
-        String deepLynxContainer,
+        String deepLynxContainerId,
         String deepLynxDatasource,
         String deepLynxApiKey,
         String deepLynxApiSecret,
@@ -12,10 +12,10 @@ public class SQLAction {
         String p6Username,
         String p6Password
     ) {
-        String sql = "REPLACE INTO connections (deepLynxURL, deepLynxContainer, deepLynxDatasource, deepLynxApiKey, deepLynxApiSecret, p6URL, p6Project, p6Username, p6Password)\n"
+        String sql = "REPLACE INTO connections (deepLynxURL, deepLynxContainerId, deepLynxDatasource, deepLynxApiKey, deepLynxApiSecret, p6URL, p6Project, p6Username, p6Password)\n"
                    + "    VALUES("
                    + "'" + deepLynxURL + "', "
-                   + "'" + deepLynxContainer + "', "
+                   + "'" + deepLynxContainerId + "', "
                    + "'" + deepLynxDatasource + "', "
                    + "'" + deepLynxApiKey + "', "
                    + "'" + deepLynxApiSecret + "', "
@@ -28,7 +28,7 @@ public class SQLAction {
     }
 
     public static String getConnections() {
-        String sql = "SELECT deepLynxURL, deepLynxContainer, deepLynxDatasource, deepLynxApiKey, deepLynxApiSecret, p6URL, p6Project, p6Username, p6Password\n"
+        String sql = "SELECT deepLynxURL, deepLynxContainerId, deepLynxDatasource, deepLynxApiKey, deepLynxApiSecret, p6URL, p6Project, p6Username, p6Password\n"
                    + "    FROM connections;";
         return sql;
     }

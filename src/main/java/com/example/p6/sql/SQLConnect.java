@@ -107,7 +107,7 @@ public class SQLConnect {
             SQLAction sqlact = new SQLAction();
             stmt.execute(sqlact.replaceIntoConnectionsEntry(
                 connection_map.get("deepLynxURL"),
-                connection_map.get("deepLynxContainer"),
+                connection_map.get("deepLynxContainerId"),
                 connection_map.get("deepLynxDatasource"),
                 connection_map.get("deepLynxApiKey"),
                 encDLAPISecretString,
@@ -177,7 +177,7 @@ public class SQLConnect {
                 String decP6Password = new String(cipher.doFinal(encP6PasswordBytes));
 
                 tempMap.put("deepLynxURL", rs.getString("deepLynxURL"));
-                tempMap.put("deepLynxContainer", rs.getString("deepLynxContainer"));
+                tempMap.put("deepLynxContainerId", rs.getString("deepLynxContainerId"));
                 tempMap.put("deepLynxDatasource", rs.getString("deepLynxDatasource"));
                 tempMap.put("deepLynxApiKey", rs.getString("deepLynxApiKey"));
                 tempMap.put("deepLynxApiSecret", decDLAPISecret);

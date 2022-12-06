@@ -1,5 +1,8 @@
 package com.example.p6;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -7,6 +10,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -29,9 +33,6 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 
 	private static final Logger LOGGER = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
-	Date lastCheckDate;
-	Date relsLastCheckDate;
-	Date codesLastCheckDate;
 	DeepLynxService dlService;
 	P6ServiceSession session;
 	private final String fileName = "import.json";
@@ -39,48 +40,18 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 	private final String codesAssignmentsFileName = "import_code_assignments.json";
 	int projectObjectId;
 
-	public Date getLastCheckDate() {
-		return lastCheckDate;
-	}
-
-	public void setLastCheckDate(Date lastCheckDate) {
-		this.lastCheckDate = lastCheckDate;
-	}
-
-	public Date getRelsLastCheckDate() {
-		return relsLastCheckDate;
-	}
-
-	public void setRelsLastCheckDate(Date relsLastCheckDate) {
-		this.relsLastCheckDate = relsLastCheckDate;
-	}
-
-	public Date getCodesLastCheckDate() {
-		return codesLastCheckDate;
-	}
-
-	public void setCodesLastCheckDate(Date codesLastCheckDate) {
-		this.codesLastCheckDate = codesLastCheckDate;
-	}
-
-	public ReadActivitiesWrapper() {
-		this.lastCheckDate = new Date(0);
-		this.relsLastCheckDate = new Date(0);
-		this.codesLastCheckDate = new Date(0);
-	}
-
 	public P6ServiceResponse mapActivities(Environment env, int databaseInstance) {
 		dlService = new DeepLynxService(env);
 		P6ServiceResponse response = new P6ServiceResponse();
 
 		dlService.authenticate();
 
-		boolean containerExists = dlService.checkContainer();
-		if (!containerExists) {
-			response.setStatus("FAILURE");
-			response.setMsg("FAILURE. Container does not exist!");
-			return response;
-		}
+		// boolean containerExists = dlService.checkContainer();
+		// if (!containerExists) {
+		// 	response.setStatus("FAILURE");
+		// 	response.setMsg("FAILURE. Container does not exist!");
+		// 	return response;
+		// }
 
 		Date dataSourceDate = dlService.checkDataSource();
 		if (dataSourceDate == null) {
@@ -88,9 +59,7 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 			response.setMsg("FAILURE. Data source not found or could not be created!");
 			return response;
 		}
-		this.setLastCheckDate(dataSourceDate);
 
-		// todo: may need to do something to close this session
 		session = new P6ServiceSession(env.getUserName(), env.getPassword(), databaseInstance, env.getP6URL());
 		List<ActivityFieldType> fields = new ArrayList<ActivityFieldType>();
 
@@ -140,61 +109,34 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		JSONArray activityList = new JSONArray();
 
 		for (com.primavera.ws.p6.activity.Activity act : getActivities(session, env.getProjectID(), fields)) {
-			PlannedActivity myActivity = new PlannedActivity();
-			myActivity.setActualStartDate(PlannedActivity.translateDate(act.getActualStartDate().getValue()));
-			myActivity.setActualFinishDate(PlannedActivity.translateDate(act.getActualFinishDate().getValue()));
-			myActivity.setProjectedFinishDate(PlannedActivity.translateDate(act.getFinishDate()));
-			myActivity.setProjectedStartDate(PlannedActivity.translateDate(act.getStartDate()));
-			myActivity.setName(act.getName());
-			myActivity.setCompletionStatus(act.getStatus());
-			myActivity.setActivityId(act.getId());
-			myActivity.setProjectId(act.getProjectId());
-			myActivity.setWBSCode(act.getWBSCode());
-			myActivity.setWBSName(act.getWBSName());
-			myActivity.setWBSPath(act.getWBSPath());
-			myActivity.setActualDuration(act.getActualDuration().getValue());
-			myActivity.setCompletedDuration(act.getAtCompletionDuration());
-			myActivity.setPlannedDuration(act.getPlannedDuration());
-			myActivity.setRemainingDuration(act.getRemainingDuration().getValue());
-			myActivity.setModifiedDate(PlannedActivity.translateDate(act.getLastUpdateDate().getValue()));
-
 			// need the projectObjectId to filter with in ActivitiesWrapper.getRelationships
+			// todo: this saves the last projectObjectId; only works since all the projectObjectId's are the same
 			projectObjectId = act.getProjectObjectId();
 
-			// Check if modified date is greater than last check date and if so send to Deep
-			// Lynx
-			if (myActivity.getModifiedDate().compareTo(this.getLastCheckDate()) > 0) {
-				JSONObject activity = new JSONObject();
-				activity.put("Id", myActivity.getActivityId());
-				activity.put("ProjectId", myActivity.getProjectId());
-				activity.put("WBSCode", myActivity.getWBSCode());
-				activity.put("WBSName", myActivity.getWBSName());
-				activity.put("WBSPath", myActivity.getWBSPath());
-				activity.put("Name", myActivity.getName());
-				activity.put("CompletionStatus", myActivity.getCompletionStatus());
-				activity.put("ProjectedStartDate", myActivity.getProjectedStartDate());
-				activity.put("ProjectedFinishDate", myActivity.getProjectedFinishDate());
-				activity.put("ActualStartDate", myActivity.getActualStartDate());
-				activity.put("ActualFinishDate", myActivity.getActualFinishDate());
-				activity.put("PlannedDuration", myActivity.getPlannedDuration());
-				activity.put("ActualDuration", myActivity.getActualDuration());
-				activity.put("RemainingDuration", myActivity.getRemainingDuration());
-				activity.put("CompletedDuration", myActivity.getCompletedDuration());
-				// activity.put("LastCheckDate", this.getLastCheckDate()); // not P6 data
-				activity.put("LastUpdateDate", myActivity.getModifiedDate());
-				activityList.put(activity);
-			}
+			JSONObject activity = new JSONObject();
+			activity.put("Id", act.getId());
+			activity.put("ProjectId", act.getProjectId());
+			activity.put("WBSCode", act.getWBSCode());
+			activity.put("WBSName", act.getWBSName());
+			activity.put("WBSPath", act.getWBSPath());
+			activity.put("Name", act.getName());
+			activity.put("CompletionStatus", act.getStatus());
+			activity.put("ProjectedStartDate", this.translateDate(act.getStartDate()));
+			activity.put("ProjectedFinishDate", this.translateDate(act.getFinishDate()));
+			activity.put("ActualStartDate", act.getActualStartDate().getValue());
+			activity.put("ActualFinishDate", act.getActualFinishDate().getValue());
+			activity.put("PlannedDuration", act.getPlannedDuration());
+			activity.put("ActualDuration", act.getActualDuration().getValue());
+			activity.put("RemainingDuration", act.getRemainingDuration().getValue());
+			activity.put("CompletedDuration", act.getAtCompletionDuration());
+			activity.put("LastUpdateDate", this.translateDate(act.getLastUpdateDate().getValue()));
+			activityList.put(activity);
 		}
 
-		// Update lastCheckDate
-		Date lastCheckDate = new Date();
-		this.setLastCheckDate(lastCheckDate);
-
-		if (activityList.length() > 0) {
-			this.writeJSONFile(activityList, fileName);
-			File importFile = new File(fileName);
-			dlService.createManualImport(importFile);
-		}
+		// write json to file and import
+		this.writeJSONFile(activityList, fileName);
+		File importFile = new File(fileName);
+		dlService.createManualImport(importFile);
 
 		// Check for errors and create response.
 		boolean failure = false, warning = false;
@@ -231,7 +173,6 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		P6ServiceResponse response = new P6ServiceResponse();
 
 		List<RelationshipFieldType> fields = new ArrayList<RelationshipFieldType>();
-
 		// Must specify which fields you desire to retrieve
 		fields.add(RelationshipFieldType.PREDECESSOR_ACTIVITY_ID);
 		fields.add(RelationshipFieldType.PREDECESSOR_PROJECT_ID);
@@ -242,35 +183,18 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		JSONArray relationshipList = new JSONArray();
 
 		for (com.primavera.ws.p6.relationship.Relationship rel : getRelationships(session, projectObjectId, fields)) {
-			PlannedRelationship myRelationship = new PlannedRelationship();
-			myRelationship.setPredecessorActivityId(rel.getPredecessorActivityId());
-			myRelationship.setPredecessorProjectId(rel.getPredecessorProjectId());
-			myRelationship.setSuccessorActivityId(rel.getSuccessorActivityId());
-			myRelationship.setSuccessorProjectId(rel.getSuccessorProjectId());
-			myRelationship.setModifiedDate(PlannedActivity.translateDate(rel.getLastUpdateDate().getValue()));
-
-			// Check if modified date is greater than last check date and if so send to Deep
-			// Lynx
-			if (myRelationship.getModifiedDate().compareTo(this.getRelsLastCheckDate()) > 0) {
-				JSONObject relationship = new JSONObject();
-				relationship.put("PredecessorActivityId", myRelationship.getPredecessorActivityId());
-				relationship.put("PredecessorProjectId", myRelationship.getPredecessorProjectId());
-				relationship.put("SuccessorActivityId", myRelationship.getSuccessorActivityId());
-				relationship.put("SuccessorProjectId", myRelationship.getSuccessorProjectId());
-				relationship.put("LastUpdateDate", myRelationship.getModifiedDate());
-				relationshipList.put(relationship);
-			}
+			JSONObject relationship = new JSONObject();
+			relationship.put("PredecessorActivityId", rel.getPredecessorActivityId());
+			relationship.put("PredecessorProjectId", rel.getPredecessorProjectId());
+			relationship.put("SuccessorActivityId", rel.getSuccessorActivityId());
+			relationship.put("SuccessorProjectId", rel.getSuccessorProjectId());
+			relationship.put("LastUpdateDate", this.translateDate(rel.getLastUpdateDate().getValue()));
+			relationshipList.put(relationship);
 		}
 
-		// Update relsLastCheckDate
-		Date lastCheckDate = new Date();
-		this.setRelsLastCheckDate(lastCheckDate);
-
-		if (relationshipList.length() > 0) {
-			this.writeJSONFile(relationshipList, relsFileName);
-			File importFile = new File(relsFileName);
-			dlService.createManualImport(importFile);
-		}
+		this.writeJSONFile(relationshipList, relsFileName);
+		File importFile = new File(relsFileName);
+		dlService.createManualImport(importFile);
 
 		// Check for errors and create response.
 		boolean failure = false, warning = false;
@@ -316,39 +240,22 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		JSONArray activityCodeAssignmentList = new JSONArray();
 
 		for (ActivityCodeAssignment code : getActivityCodeAssignments(session, env.getProjectID(), fields)) {
-			PlannedActivityCode myActivityCode = new PlannedActivityCode();
-			myActivityCode.setActivityCodeDescription(code.getActivityCodeDescription());
-			myActivityCode.setActivityCodeTypeName(code.getActivityCodeTypeName());
-			myActivityCode.setActivityCodeValue(code.getActivityCodeValue());
-			myActivityCode.setActivityId(code.getActivityId());
-			myActivityCode.setActivityName(code.getActivityName());
-			myActivityCode.setProjectId(code.getProjectId());
-			myActivityCode.setActivityCodeObjectId(code.getActivityCodeObjectId());
-			myActivityCode.setModifiedDate(PlannedActivity.translateDate(code.getLastUpdateDate().getValue()));
-
-			if (myActivityCode.getModifiedDate().compareTo(this.getCodesLastCheckDate()) > 0) {
-				JSONObject activityCodeAssignment = new JSONObject();
-				activityCodeAssignment.put("ActivityCodeDescription", code.getActivityCodeDescription());
-				activityCodeAssignment.put("ActivityCodeTypeName", code.getActivityCodeTypeName());
-				activityCodeAssignment.put("ActivityCodeValue", code.getActivityCodeValue());
-				activityCodeAssignment.put("ActivityId", code.getActivityId());
-				activityCodeAssignment.put("ActivityName", code.getActivityName());
-				activityCodeAssignment.put("ProjectId", code.getProjectId());
-				activityCodeAssignment.put("ActivityCodeObjectId", code.getActivityCodeObjectId());
-				activityCodeAssignmentList.put(activityCodeAssignment);
-			}
+			JSONObject activityCodeAssignment = new JSONObject();
+			activityCodeAssignment.put("ActivityCodeDescription", code.getActivityCodeDescription());
+			activityCodeAssignment.put("ActivityCodeTypeName", code.getActivityCodeTypeName());
+			activityCodeAssignment.put("ActivityCodeValue", code.getActivityCodeValue());
+			activityCodeAssignment.put("ActivityId", code.getActivityId());
+			activityCodeAssignment.put("ActivityName", code.getActivityName());
+			activityCodeAssignment.put("ProjectId", code.getProjectId());
+			activityCodeAssignment.put("ActivityCodeObjectId", code.getActivityCodeObjectId());
+			activityCodeAssignment.put("LastUpdateDate", this.translateDate(code.getLastUpdateDate().getValue()));
+			activityCodeAssignmentList.put(activityCodeAssignment);
 
 		}
 
-		// Update codesLastCheckDate
-		Date lastCheckDate = new Date();
-		this.setCodesLastCheckDate(lastCheckDate);
-
-		if (activityCodeAssignmentList.length() > 0) {
-			this.writeJSONFile(activityCodeAssignmentList, codesAssignmentsFileName);
-			File importFile = new File(codesAssignmentsFileName);
-			dlService.createManualImport(importFile);
-		}
+		this.writeJSONFile(activityCodeAssignmentList, codesAssignmentsFileName);
+		File importFile = new File(codesAssignmentsFileName);
+		dlService.createManualImport(importFile);
 
 		// Check for errors and create response.
 		boolean failure = false, warning = false;
@@ -390,5 +297,36 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 			LOGGER.log(Level.SEVERE, e.toString(), e);
 		}
 	}
+
+	public static  Date translateDate(javax.xml.datatype.XMLGregorianCalendar date){
+	        return date == null ? null : date.toGregorianCalendar().getTime();
+	}
+
+	public static Date translateDate(String dateString){
+        GregorianCalendar calendar = (GregorianCalendar)GregorianCalendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat();
+
+        try {
+            if (dateString != null){
+                if (dateString.matches("^(0[1-9]|1[012])/(0[1-9]|[12][0-9]|3[01])/(19|20)\\d\\d$")){
+                    sdf = new SimpleDateFormat("MM/dd/yyyy");
+                }
+                else if (dateString.matches("^(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])-(19|20)\\d\\d$")){
+                    sdf = new SimpleDateFormat("MM-dd-yyyy");
+                }
+                else if (dateString.matches("^(19|20)\\d\\d(0[1-9]|1[012])(0[1-9]|[12][0-9]|3[01])$")){
+                    sdf = new SimpleDateFormat("yyyyMMdd");
+                }
+                else if (dateString.matches("^(19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$")){
+                    sdf = new SimpleDateFormat("yyyy-MM-dd");
+                }
+
+                calendar.setTime(sdf.parse(dateString));
+            }
+        } catch (ParseException e) {
+             e.printStackTrace();
+        }
+        return calendar.getTime();
+    }
 
 }
