@@ -5,6 +5,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 import javax.xml.ws.BindingProvider;
 
@@ -16,10 +18,17 @@ import com.primavera.ws.p6.relationship.RelationshipFieldType;
 import com.primavera.ws.p6.relationship.RelationshipPortType;
 import com.primavera.ws.p6.relationship.RelationshipService;
 
+import com.primavera.ws.p6.activitycode.*;
+import com.primavera.ws.p6.activitycodetype.*;
+import com.primavera.ws.p6.activitycodeassignment.*;
+import com.primavera.ws.p6.udfvalue.*;
+import com.primavera.ws.p6.udftype.*;
+
 public class ActivitiesWrapper {
 
     protected ArrayList<P6ServiceMessage> errors = new ArrayList<P6ServiceMessage>();
     protected String log = "";
+    protected Map<String,Integer> foundActivityCodes = new HashMap<String,Integer>();
 
     public ActivitiesWrapper() {
     }
@@ -102,31 +111,88 @@ public class ActivitiesWrapper {
         return success;
     }
 
-    protected List<com.primavera.ws.p6.relationship.Relationship> getRelationships(P6ServiceSession session, int projectObjectID, List<RelationshipFieldType> returnParams){
-          String url = session.getP6url() + "RelationshipService?wsdl";
+  protected List<com.primavera.ws.p6.relationship.Relationship> getRelationships(P6ServiceSession session, int projectObjectID, List<RelationshipFieldType> returnParams){
+        String url = session.getP6url() + "RelationshipService?wsdl";
+        URL wsdlURL = null;
+
+        try {
+            wsdlURL = new URL(url);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            addError(P6ServiceMessage.MessageType.APPLICATION, "Error creating URL for RelationshipService.  URL: " + url + " \nMalformedURLException thrown: " + e.getMessage());
+        }
+
+        RelationshipService service = new RelationshipService(wsdlURL);
+        RelationshipPortType servicePort = service.getRelationshipPort();
+        session.setUserNameToken((BindingProvider)servicePort);
+
+        List<com.primavera.ws.p6.relationship.Relationship> results = null;
+
+        try {
+            results = servicePort.readRelationships(returnParams,"SuccessorProjectObjectId='" + projectObjectID + "'", null);
+        } catch (com.primavera.ws.p6.relationship.IntegrationFault e) {
+            e.printStackTrace();
+        }
+
+        return results;
+      }
+
+   protected List<com.primavera.ws.p6.activitycode.ActivityCode> getActivityCodes(P6ServiceSession session, int projectObjectID, List<ActivityCodeFieldType> returnParams){
+          String url = session.getP6url() + "ActivityCodeService?wsdl";
           URL wsdlURL = null;
 
           try {
               wsdlURL = new URL(url);
           } catch (MalformedURLException e) {
               e.printStackTrace();
-              addError(P6ServiceMessage.MessageType.APPLICATION, "Error creating URL for RelationshipService.  URL: " + url + " \nMalformedURLException thrown: " + e.getMessage());
+              addError(P6ServiceMessage.MessageType.APPLICATION, "Error creating URL for ActivityCodeService.  URL: " + url + " \nMalformedURLException thrown: " + e.getMessage());
           }
 
-          RelationshipService service = new RelationshipService(wsdlURL);
-          RelationshipPortType servicePort = service.getRelationshipPort();
+          ActivityCodeService service = new ActivityCodeService(wsdlURL);
+          ActivityCodePortType servicePort = service.getActivityCodePort();
+
+          // todo: check if this needs to happen again..
           session.setUserNameToken((BindingProvider)servicePort);
 
-          List<com.primavera.ws.p6.relationship.Relationship> results = null;
+          List<com.primavera.ws.p6.activitycode.ActivityCode> results = null;
 
           try {
-              results = servicePort.readRelationships(returnParams,"SuccessorProjectObjectId='" + projectObjectID + "'", null);
-          } catch (com.primavera.ws.p6.relationship.IntegrationFault e) {
+              // results = servicePort.readActivityCodes(returnParams, null, null);
+              results = servicePort.readActivityCodes(returnParams,"ProjectObjectId='158845'", null);
+              // results = servicePort.readActivityCodes(returnParams,"ProjectObjectId='" + projectObjectID + "'", null);
+          } catch (com.primavera.ws.p6.activitycode.IntegrationFault e) {
               e.printStackTrace();
           }
 
           return results;
       }
+
+      public List<ActivityCodeAssignment> getActivityCodeAssignments(P6ServiceSession session, String projectID, List<ActivityCodeAssignmentFieldType> returnParams){
+        String url = session.getP6url() + "ActivityCodeAssignmentService?wsdl";
+        URL wsdlURL = null;
+
+        try {
+            wsdlURL = new URL(url);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            addError(P6ServiceMessage.MessageType.APPLICATION, "Error creating URL for ActivityService.  URL: " + url + " \nMalformedURLException thrown: " + e.getMessage());
+        }
+
+        ActivityCodeAssignmentService acservice = new ActivityCodeAssignmentService(wsdlURL);
+        ActivityCodeAssignmentPortType acservicePort = acservice.getActivityCodeAssignmentPort();
+        session.setUserNameToken((BindingProvider)acservicePort);
+
+        List<ActivityCodeAssignment> results = null;
+        try {
+            results = acservicePort.readActivityCodeAssignments(returnParams,"ProjectId='" + projectID + "'", null);
+        } catch (com.primavera.ws.p6.activitycodeassignment.IntegrationFault e) {
+        // } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return results;
+    }
+
 
     protected void addError(P6ServiceMessage.MessageType type, String messageText){
         if(errors == null){

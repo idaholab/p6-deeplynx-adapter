@@ -33,14 +33,6 @@ public class DeepLynxService {
 	private String apiSecret = null;
 	private String token = null;
 
-	public String getContainerID() {
-		return containerID;
-	}
-
-	public void setContainerID(String containerID) {
-		this.containerID = containerID;
-	}
-
 	public String getDataSourceID() {
 		return dataSourceID;
 	}
@@ -61,25 +53,7 @@ public class DeepLynxService {
 		this.env = env;
 		this.apiKey = env.getApiKey();
 		this.apiSecret = env.getApiSecret();
-	}
-
-	public boolean checkContainer() {
-		String path = env.getDeepLynxURL() + "/containers?offset=0&limit=100";
-		JSONObject obj = this.makeHTTPRequest(path, "GET", null, null);
-		if (obj == null) {
-			return false;
-		}
-		JSONArray valArr = obj.getJSONArray("value");
-		for (int i = 0; i < valArr.length(); i++) {
-			String containerName = ((JSONObject) valArr.get(i)).getString("name");
-			if (this.env.getContainerName().equals(containerName)) {
-				String containerID = ((JSONObject) valArr.get(i)).getString("id");
-				this.setContainerID(containerID);
-				return true;
-			}
-		}
-
-		return false;
+		this.containerID = env.getContainerId();
 	}
 
 	/**
@@ -88,7 +62,8 @@ public class DeepLynxService {
 	 * Else return null.
 	 */
 	public Date checkDataSource() {
-		String path = env.getDeepLynxURL() + "/containers/" + this.getContainerID() + "/import/datasources";
+		System.out.println("container Id: " + this.containerID);
+		String path = env.getDeepLynxURL() + "/containers/" + this.containerID + "/import/datasources";
 		JSONObject obj = this.makeHTTPRequest(path, "GET", null, null);
 		if (obj == null) {
 			return null;
@@ -103,7 +78,7 @@ public class DeepLynxService {
 				this.setDataSourceID(dataSourceID);
 				dataSourceExists = true;
 				// Check if imports have already occurred for this data source
-				path = env.getDeepLynxURL() + "/containers/" + this.getContainerID() + "/import/datasources/" + this.getDataSourceID() + "/imports";
+				path = env.getDeepLynxURL() + "/containers/" + this.containerID + "/import/datasources/" + this.getDataSourceID() + "/imports";
 				obj = this.makeHTTPRequest(path, "GET", null, null);
 				valArr = obj.getJSONArray("value");
 				if (valArr.length() > 0) {
@@ -153,6 +128,7 @@ public class DeepLynxService {
 
 		System.out.println(this.apiKey);
 		System.out.println(this.apiSecret);
+		System.out.println(this.containerID);
 
 		// supply api keys and expiry via hashmap
 		HashMap<String, String> headers = new HashMap<String, String>();
@@ -165,7 +141,7 @@ public class DeepLynxService {
 	}
 
 	public void createManualImport(File importFile) {
-		String path = env.getDeepLynxURL() + "/containers/" + this.getContainerID() + "/import/datasources/" + this.getDataSourceID() + "/imports";
+		String path = env.getDeepLynxURL() + "/containers/" + this.containerID + "/import/datasources/" + this.getDataSourceID() + "/imports";
 		JSONObject obj = this.makeHTTPFileRequest(path, importFile);
 		boolean isError = obj.getBoolean("isError");
 		if (isError) {

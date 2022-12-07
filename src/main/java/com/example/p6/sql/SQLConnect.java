@@ -22,7 +22,7 @@ import java.util.Base64;
 public class SQLConnect {
 
     public static Connection conn = null;
-    private static String url = "jdbc:sqlite:/var/app/sqlite/p6.db"; // TODO: replace with env var reference.
+    private static String url = System.getenv("P6_DB_LOC"); // TODO: replace with env var reference.
     private static DatabaseMetaData mdata = null;
 
     /**
@@ -32,7 +32,8 @@ public class SQLConnect {
         try {
             conn = DriverManager.getConnection(url);
             System.out.println("Connection to SQLite has been established.");
-            return true;
+            boolean migrateSuccess = migrate();
+            return migrateSuccess;
         } catch (SQLException e) {
             System.out.println(e.getMessage());
             return false;
@@ -83,7 +84,7 @@ public class SQLConnect {
     }
 
     /**
-    * Add entry to the connections table
+    * Add entry to the connections table, it encrypts the key/password values
     */
     public static boolean addConnection(HashMap<String, String> connection_map) {
         try {
@@ -106,7 +107,48 @@ public class SQLConnect {
             SQLAction sqlact = new SQLAction();
             stmt.execute(sqlact.replaceIntoConnectionsEntry(
                 connection_map.get("deepLynxURL"),
-                connection_map.get("deepLynxContainer"),
+                connection_map.get("deepLynxContainerId"),
+                connection_map.get("deepLynxDatasource"),
+                connection_map.get("deepLynxApiKey"),
+                encDLAPISecretString,
+                connection_map.get("p6URL"),
+                connection_map.get("p6Project"),
+                connection_map.get("p6Username"),
+                encP6PasswordString
+            ));
+            return true;
+
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+            return false;
+        }
+    }
+
+    /**
+    * Delete an entry from the connections table
+    */
+    public static boolean deleteConnection(HashMap<String, String> connection_map) {
+        try {
+            // setup cipher for encryption
+            String key = System.getenv("P6_ENCRYPTION_KEY");
+            Key aesKey = new SecretKeySpec(key.getBytes(), "AES");
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, aesKey);
+
+            // encrypt sensitive values
+            byte[] encDLAPISecret = cipher.doFinal(connection_map.get("deepLynxApiSecret").getBytes());
+            String encDLAPISecretString = Base64.getEncoder().encodeToString(encDLAPISecret);
+            byte[] encP6Password = cipher.doFinal(connection_map.get("p6Password").getBytes());
+            String encP6PasswordString = Base64.getEncoder().encodeToString(encP6Password);
+
+            // initialize statement
+            Statement stmt = conn.createStatement();
+
+            // addition
+            SQLAction sqlact = new SQLAction();
+            stmt.execute(sqlact.deleteConnectionsEntry(
+                connection_map.get("deepLynxURL"),
+                connection_map.get("deepLynxContainerId"),
                 connection_map.get("deepLynxDatasource"),
                 connection_map.get("deepLynxApiKey"),
                 encDLAPISecretString,
@@ -137,11 +179,12 @@ public class SQLConnect {
 
             // write log
             SQLAction sqlact = new SQLAction();
+            System.out.println(unixTimeString + " | " + logText);
             stmt.execute(sqlact.makeLog(unixTimeString, logText));
             return true;
 
         } catch (Exception ex) {
-            System.out.println(ex.getMessage());
+            System.out.println("addLog() FAILURE | " + ex.getMessage());
             return false;
         }
     }
@@ -175,7 +218,7 @@ public class SQLConnect {
                 String decP6Password = new String(cipher.doFinal(encP6PasswordBytes));
 
                 tempMap.put("deepLynxURL", rs.getString("deepLynxURL"));
-                tempMap.put("deepLynxContainer", rs.getString("deepLynxContainer"));
+                tempMap.put("deepLynxContainerId", rs.getString("deepLynxContainerId"));
                 tempMap.put("deepLynxDatasource", rs.getString("deepLynxDatasource"));
                 tempMap.put("deepLynxApiKey", rs.getString("deepLynxApiKey"));
                 tempMap.put("deepLynxApiSecret", decDLAPISecret);
