@@ -125,6 +125,47 @@ public class SQLConnect {
     }
 
     /**
+    * Delete an entry from the connections table
+    */
+    public static boolean deleteConnection(HashMap<String, String> connection_map) {
+        try {
+            // setup cipher for encryption
+            String key = System.getenv("P6_ENCRYPTION_KEY");
+            Key aesKey = new SecretKeySpec(key.getBytes(), "AES");
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, aesKey);
+
+            // encrypt sensitive values
+            byte[] encDLAPISecret = cipher.doFinal(connection_map.get("deepLynxApiSecret").getBytes());
+            String encDLAPISecretString = Base64.getEncoder().encodeToString(encDLAPISecret);
+            byte[] encP6Password = cipher.doFinal(connection_map.get("p6Password").getBytes());
+            String encP6PasswordString = Base64.getEncoder().encodeToString(encP6Password);
+
+            // initialize statement
+            Statement stmt = conn.createStatement();
+
+            // addition
+            SQLAction sqlact = new SQLAction();
+            stmt.execute(sqlact.deleteConnectionsEntry(
+                connection_map.get("deepLynxURL"),
+                connection_map.get("deepLynxContainerId"),
+                connection_map.get("deepLynxDatasource"),
+                connection_map.get("deepLynxApiKey"),
+                encDLAPISecretString,
+                connection_map.get("p6URL"),
+                connection_map.get("p6Project"),
+                connection_map.get("p6Username"),
+                encP6PasswordString
+            ));
+            return true;
+
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+            return false;
+        }
+    }
+
+    /**
     * Add entry to the logs table
     */
     public static boolean addLog(String logText) {

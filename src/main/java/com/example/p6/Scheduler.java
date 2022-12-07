@@ -16,8 +16,10 @@ public class Scheduler {
   //   private static final long interval;
 
 	// @Scheduled(fixedRate = Scheduler.interval)
-	@Scheduled(fixedRate = 3600000)
+	// @Scheduled(fixedRate = 3600000)
+	@Scheduled(fixedRate = 10000)
 	public void adapterLoop() {
+		System.out.println("tick");
 		try {
 			SQLConnect sqlconnect = new SQLConnect();
 
