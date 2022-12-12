@@ -10,16 +10,6 @@ metadata:
     app: app
   name: env
 
-
-# Namespace
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: p6-adapter-dev
-  labels:
-    name: p6-adapter-dev
-
 # Persistent Volume
 ---
 apiVersion: v1
