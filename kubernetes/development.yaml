@@ -118,7 +118,7 @@ metadata:
       proxy_set_header X-Forwarded-Proto https;
     nginx.ingress.kubernetes.io/proxy-read-timeout: '3600'
     nginx.ingress.kubernetes.io/proxy-send-timeout: '3600'
-  spec:
+spec:
   rules:
     - host: ${NETWORKING_HOST}
       http:
