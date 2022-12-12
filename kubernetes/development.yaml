@@ -127,6 +127,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: 
+                name: app-ingress
                 port:
                   number: 8080
