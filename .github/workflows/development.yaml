@@ -41,10 +41,7 @@ jobs:
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
         run: |
           cd $GITHUB_WORKSPACE
-          cat kubernetes/development.yaml
-          echo $KUBE_CONFIGMAP >> kubernetes/development.yaml
-          cat kubernetes/development.yaml
-          envsubst < kubernetes/development.yaml > kubernetes/development.yaml
+          envsubst < kubernetes/development.yaml > kubernetes/manifest.yaml
 
       - uses: azure/setup-kubectl@v3
 
@@ -65,4 +62,4 @@ jobs:
           force: true
           strategy: basic
           manifests: |
-            kubernetes/development.yaml
+            kubernetes/manifest.yaml
