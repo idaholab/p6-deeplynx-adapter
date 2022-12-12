@@ -1,3 +1,16 @@
+# ConfigMap
+apiVersion: v1
+data:
+  P6_ADAPTER_PORT: "8080"
+  P6_HOSTNAME: p6-prd-mw
+  P6_IP_ADDRESS: 10.53.20.38
+kind: ConfigMap
+metadata:
+  labels:
+    app: app
+  name: env
+
+
 # Namespace
 ---
 apiVersion: v1
