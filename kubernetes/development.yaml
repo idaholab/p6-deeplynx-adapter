@@ -8,7 +8,7 @@ kind: ConfigMap
 metadata:
   labels:
     app: app
-  name: env
+  name: p6-adapter-cm
 
 # Persistent Volume
 ---
@@ -45,22 +45,10 @@ spec:
         app: app
     spec:
       containers:
-        - env:
-            - name: P6_ADAPTER_PORT
-              valueFrom:
-                secretKeyRef:
-                  key: P6_ADAPTER_PORT
-                  name: env
-            - name: P6_HOSTNAME
-              valueFrom:
-                configMapKeyRef:
-                  key: P6_HOSTNAME
-                  name: env
-            - name: P6_IP_ADDRESS
-              valueFrom:
-                configMapKeyRef:
-                  key: P6_IP_ADDRESS
-                  name: env
+        - envFrom:
+          - configMapRef:
+            name: p6-adapter-cm
+          env:
             - name: P6_ENCRYPTION_KEY
               valueFrom:
                 secretKeyRef:
