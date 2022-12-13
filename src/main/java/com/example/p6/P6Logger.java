@@ -24,7 +24,7 @@ public class P6Logger {
         }
 
         logger.setLevel(Level.INFO);
-        fileTxt = new FileHandler("Log.txt");
+        fileTxt = new FileHandler("/filestore/Log.txt");
         fileTxt.setLevel(Level.INFO);
 
         formatterTxt = new SimpleFormatter();
