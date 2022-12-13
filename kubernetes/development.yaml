@@ -47,7 +47,7 @@ spec:
       containers:
         - envFrom:
           - configMapRef:
-            name: p6-adapter-cm
+              name: p6-adapter-cm
           env:
             - name: P6_ENCRYPTION_KEY
               valueFrom:
