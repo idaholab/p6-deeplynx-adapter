@@ -84,7 +84,7 @@ metadata:
 spec:
   ports:
     - name: "8080"
-      port: 8080
+      port: 80
       targetPort: 8080
   selector:
     app: app
@@ -117,4 +117,4 @@ spec:
               service:
                 name: app-ingress
                 port:
-                  number: 8080
+                  number: 80
