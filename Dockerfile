@@ -25,4 +25,6 @@ RUN mvn -Dmaven.wagon.http.ssl.insecure=true dependency:resolve
 
 RUN mvn clean package
 
+RUN chmod +x entrypoint.sh
+
 ENTRYPOINT [ "./entrypoint.sh" ]

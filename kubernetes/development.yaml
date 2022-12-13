@@ -60,7 +60,7 @@ spec:
           args: 
             - /bin/sh
             - -c
-            - java -jar /var/app/target/p6-0.0.1-SNAPSHOT.jar
+            - /bin/bash ./entrypoint.sh
           ports:
             - containerPort: 8080
           resources: 
