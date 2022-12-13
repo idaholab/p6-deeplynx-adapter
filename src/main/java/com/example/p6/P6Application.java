@@ -1,5 +1,6 @@
 package com.example.p6;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 import org.springframework.boot.SpringApplication;
@@ -16,6 +17,11 @@ public class P6Application {
     */
 	public static void main(String[] args) {
 		SpringApplication.run(P6Application.class, args);
+		try {
+			P6Logger.setup();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		SpringApplication.run(Scheduler.class, args);
 	}
 
