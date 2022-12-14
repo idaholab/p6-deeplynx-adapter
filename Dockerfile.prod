@@ -1,7 +1,7 @@
-FROM maven:3.8.6-ibmjava-8 AS production
+FROM maven:3.8.6-ibmjava-8 AS build
 
 WORKDIR /var/app
-COPY ./* /var/app/
+COPY ./* .
 
 RUN mvn install:install-file \
     -Dmaven.wagon.http.ssl.insecure=true \
@@ -10,7 +10,7 @@ RUN mvn install:install-file \
     -DartifactId=p6ws \
     -Dversion=1.0 \
     -Dpackaging=jar \
-    -DgeneratePom=true
+    -DgeneratePom=true 
 
 RUN mvn install:install-file \
     -Dmaven.wagon.http.ssl.insecure=true \
@@ -25,6 +25,17 @@ RUN mvn -Dmaven.wagon.http.ssl.insecure=true dependency:resolve
 
 RUN mvn clean package
 
-RUN chmod +x entrypoint.sh
+FROM nginx:latest as production
 
-ENTRYPOINT [ "./entrypoint.sh" ]
+WORKDIR /var/app
+COPY --from=build /var/app/ .
+
+WORKDIR /
+RUN apt-get update && apt-get -y upgrade
+RUN apt install -y default-jre
+
+WORKDIR /etc/nginx/conf.d
+RUN rm default.conf
+COPY nginx.conf .
+
+WORKDIR /var/app
