@@ -6,26 +6,24 @@ public class Environment {
 	private String password;
 	private String deepLynxURL;
 	private String containerID;
-	private String dataSourceName;
+	private String dataSourceId;
 	private String apiKey;
 	private String apiSecret;
 	private String p6URL;
 	private String projectID;
-	// private int timer;
 
 	public Environment() {}
 
-	public Environment(String userName, String password, String deepLynxURL, String containerID, String dataSourceName, String apiKey, String apiSecret, String p6URL, String projectID) {
+	public Environment(String userName, String password, String deepLynxURL, String containerID, String dataSourceId, String apiKey, String apiSecret, String p6URL, String projectID) {
 		this.userName = userName;
 		this.password = password;
 		this.deepLynxURL = deepLynxURL;
 		this.containerID = containerID;
-		this.dataSourceName = dataSourceName;
+		this.dataSourceId = dataSourceId;
 		this.apiKey = apiKey;
 		this.apiSecret = apiSecret;
 		this.p6URL = p6URL;
 		this.projectID = projectID;
-		// this.timer = timer;
 	}
 
 	public String getPassword() {
@@ -60,12 +58,12 @@ public class Environment {
 		this.containerID = containerID;
 	}
 
-	public String getDataSourceName() {
-		return dataSourceName;
+	public String getDataSourceId() {
+		return dataSourceId;
 	}
 
-	public void setDataSourceName(String dataSourceName) {
-		this.dataSourceName = dataSourceName;
+	public void setDataSourceId(String dataSourceId) {
+		this.dataSourceId = dataSourceId;
 	}
 
 	public String getApiKey() {
@@ -99,13 +97,4 @@ public class Environment {
 	public void setProjectID(String projectID) {
 		this.projectID = projectID;
 	}
-
-	// public int getTimer() {
-	// 	return timer;
-	// }
-
-	// public void setTimer(int timer) {
-	// 	this.timer = timer;
-	// }
-
 }

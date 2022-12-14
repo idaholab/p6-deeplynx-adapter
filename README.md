@@ -40,7 +40,7 @@ The following endpoints will be used to interact with the adapter:
             <pre>{
     "deepLynxURL": "https://STRING.com",
     "deepLynxContainerId": "STRING",
-    "deepLynxDatasource": "STRING",
+    "deepLynxDatasourceId": "STRING",
     "deepLynxApiKey": "STRING",
     "deepLynxApiSecret": "STRING",
     "p6URL": "https://STRING.com",
@@ -60,7 +60,7 @@ The following endpoints will be used to interact with the adapter:
             <pre>{
     "deepLynxURL": "https://STRING.com",
     "deepLynxContainerId": "STRING",
-    "deepLynxDatasource": "STRING",
+    "deepLynxDatasourceId": "STRING",
     "deepLynxApiKey": "STRING",
     "deepLynxApiSecret": "STRING",
     "p6URL": "https://STRING.com",

@@ -42,7 +42,7 @@ public class Scheduler {
 						,connection.get("p6Password")
 						,connection.get("deepLynxURL")
 						,connection.get("deepLynxContainerId")
-						,connection.get("deepLynxDatasource")
+						,connection.get("deepLynxDatasourceId")
 						,connection.get("deepLynxApiKey")
 						,connection.get("deepLynxApiSecret")
 						,connection.get("p6URL")

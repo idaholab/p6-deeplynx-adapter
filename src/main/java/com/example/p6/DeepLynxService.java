@@ -33,14 +33,6 @@ public class DeepLynxService {
 	private String apiSecret = null;
 	private String token = null;
 
-	public String getDataSourceID() {
-		return dataSourceID;
-	}
-
-	public void setDataSourceID(String dataSourceID) {
-		this.dataSourceID = dataSourceID;
-	}
-
 	public String getToken() {
 		return token;
 	}
@@ -54,73 +46,7 @@ public class DeepLynxService {
 		this.apiKey = env.getApiKey();
 		this.apiSecret = env.getApiSecret();
 		this.containerID = env.getContainerId();
-	}
-
-	/**
-	 * If the data source already exists and has existing imports return the latest import date.
-	 * If the data source does not exist, create it and return a default date (Date(0)).
-	 * Else return null.
-	 */
-	public Date checkDataSource() {
-		System.out.println("container Id: " + this.containerID);
-		String path = env.getDeepLynxURL() + "/containers/" + this.containerID + "/import/datasources";
-		JSONObject obj = this.makeHTTPRequest(path, "GET", null, null);
-		if (obj == null) {
-			return null;
-		}
-		JSONArray valArr = obj.getJSONArray("value");
-		boolean dataSourceExists = false;
-		for (int i = 0; i < valArr.length(); i++) {
-			String dataSourceName = ((JSONObject) valArr.get(i)).getString("name");
-			if (this.env.getDataSourceName().equals(dataSourceName)) {
-				LOGGER.log(Level.INFO, "Data source exists");
-				String dataSourceID = ((JSONObject) valArr.get(i)).getString("id");
-				this.setDataSourceID(dataSourceID);
-				dataSourceExists = true;
-				// Check if imports have already occurred for this data source
-				path = env.getDeepLynxURL() + "/containers/" + this.containerID + "/import/datasources/" + this.getDataSourceID() + "/imports";
-				obj = this.makeHTTPRequest(path, "GET", null, null);
-				valArr = obj.getJSONArray("value");
-				if (valArr.length() > 0) {
-					JSONObject latestImport = valArr.getJSONObject(0);
-					Date importDate = null;
-					try {
-						SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-						dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-						importDate = dateFormat.parse(latestImport.getString("created_at"));
-					} catch (JSONException e) {
-						e.printStackTrace();
-						LOGGER.log(Level.SEVERE, e.toString(), e);
-					} catch (ParseException e) {
-						e.printStackTrace();
-						LOGGER.log(Level.SEVERE, e.toString(), e);
-					}
-					// TODO: Deep Lynx requires a fix to return the correct date in above API call
-					System.out.println("Dev. Import date: " + importDate);
-					return importDate;
-				} else {
-					// Data source has been created but does not have any imports
-					return new Date(0);
-				}
-			}
-		}
-
-		if (!dataSourceExists) {
-			// Create new data source
-			String body = "{\"adapter_type\":\"standard\", \"active\": true, \"name\": \"" + env.getDataSourceName() + "\"}";
-			obj = this.makeHTTPRequest(path, "POST", body, null);
-			boolean isError = obj.getBoolean("isError");
-			if (isError) {
-				return null;
-			} else {
-				JSONObject val = obj.getJSONObject("value");
-				String id = val.getString("id");
-				this.setDataSourceID(id);
-				return new Date(0);
-			}
-		}
-
-		return null;
+		this.dataSourceID = env.getDataSourceId();
 	}
 
 	public void authenticate() {
@@ -141,7 +67,7 @@ public class DeepLynxService {
 	}
 
 	public void createManualImport(File importFile) {
-		String path = env.getDeepLynxURL() + "/containers/" + this.containerID + "/import/datasources/" + this.getDataSourceID() + "/imports";
+		String path = env.getDeepLynxURL() + "/containers/" + this.containerID + "/import/datasources/" + this.dataSourceID + "/imports";
 		JSONObject obj = this.makeHTTPFileRequest(path, importFile);
 		boolean isError = obj.getBoolean("isError");
 		if (isError) {
