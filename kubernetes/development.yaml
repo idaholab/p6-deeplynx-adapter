@@ -55,7 +55,7 @@ spec:
                   key: P6_ENCRYPTION_KEY
                   name: p6-encryption-key
           image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:${GITHUB_RUN_NUMBER}-dev
-          imagePullPolicy: Never
+          imagePullPolicy: Always
           name: app
           args: 
             - /bin/sh
