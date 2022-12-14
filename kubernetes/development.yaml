@@ -62,7 +62,7 @@ spec:
             - -c
             - nginx -g "daemon off;" & java -jar /var/app/target/p6-0.0.1-SNAPSHOT.jar
           ports:
-            - containerPort: 8080
+            - containerPort: 80
           resources: 
             limits:
               cpu: 0.25m
@@ -89,7 +89,7 @@ spec:
   ports:
     - name: "8080"
       port: 80
-      targetPort: 8080
+      targetPort: 80
   selector:
     app: app
 
