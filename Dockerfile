@@ -1,7 +1,7 @@
 FROM maven:3.8.6-ibmjava-8 AS build
 
 WORKDIR /var/app
-COPY ./* .
+COPY ./* ./
 
 RUN mvn install:install-file \
     -Dmaven.wagon.http.ssl.insecure=true \
