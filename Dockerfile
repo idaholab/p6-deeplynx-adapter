@@ -28,7 +28,7 @@ RUN mvn clean package
 FROM nginx:latest as production
 
 WORKDIR /var/app
-COPY --from=build /var/app/ .
+COPY --from=build /var/app/ ./
 
 WORKDIR /
 RUN apt-get update && apt-get -y upgrade
