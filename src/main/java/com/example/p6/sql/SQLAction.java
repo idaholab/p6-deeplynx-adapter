@@ -3,7 +3,7 @@ package com.example.p6;
 public class SQLAction {
     public static String replaceIntoConnectionsEntry(
         String deepLynxURL,
-        String deepLynxContainer,
+        String deepLynxContainerId,
         String deepLynxDatasource,
         String deepLynxApiKey,
         String deepLynxApiSecret,
@@ -12,10 +12,10 @@ public class SQLAction {
         String p6Username,
         String p6Password
     ) {
-        String sql = "REPLACE INTO connections (deepLynxURL, deepLynxContainer, deepLynxDatasource, deepLynxApiKey, deepLynxApiSecret, p6URL, p6Project, p6Username, p6Password)\n"
+        String sql = "REPLACE INTO connections (deepLynxURL, deepLynxContainerId, deepLynxDatasource, deepLynxApiKey, deepLynxApiSecret, p6URL, p6Project, p6Username, p6Password)\n"
                    + "    VALUES("
                    + "'" + deepLynxURL + "', "
-                   + "'" + deepLynxContainer + "', "
+                   + "'" + deepLynxContainerId + "', "
                    + "'" + deepLynxDatasource + "', "
                    + "'" + deepLynxApiKey + "', "
                    + "'" + deepLynxApiSecret + "', "
@@ -27,8 +27,34 @@ public class SQLAction {
         return sql;
     }
 
+    public static String deleteConnectionsEntry(
+        String deepLynxURL,
+        String deepLynxContainerId,
+        String deepLynxDatasource,
+        String deepLynxApiKey,
+        String deepLynxApiSecret,
+        String p6URL,
+        String p6Project,
+        String p6Username,
+        String p6Password
+    ) {
+        String sql = "DELETE FROM connections \n"
+                   + "    WHERE("
+                   + "deepLynxURL = '" + deepLynxURL + "' AND "
+                   + "deepLynxContainerId = '" + deepLynxContainerId + "' AND "
+                   + "deepLynxDatasource = '" + deepLynxDatasource + "' AND "
+                   + "deepLynxApiKey = '" + deepLynxApiKey + "' AND "
+                   + "deepLynxApiSecret = '" + deepLynxApiSecret + "' AND "
+                   + "p6URL = '" + p6URL + "' AND "
+                   + "p6Project = '" + p6Project + "' AND "
+                   + "p6Username = '" + p6Username + "' AND "
+                   + "p6Password = '" + p6Password + "'"
+                   + ");\n";
+        return sql;
+    }
+
     public static String getConnections() {
-        String sql = "SELECT deepLynxURL, deepLynxContainer, deepLynxDatasource, deepLynxApiKey, deepLynxApiSecret, p6URL, p6Project, p6Username, p6Password\n"
+        String sql = "SELECT deepLynxURL, deepLynxContainerId, deepLynxDatasource, deepLynxApiKey, deepLynxApiSecret, p6URL, p6Project, p6Username, p6Password\n"
                    + "    FROM connections;";
         return sql;
     }
