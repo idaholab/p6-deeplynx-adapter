@@ -4,7 +4,7 @@ public class SQLAction {
     public static String replaceIntoConnectionsEntry(
         String deepLynxURL,
         String deepLynxContainerId,
-        String deepLynxDatasource,
+        String deepLynxDatasourceId,
         String deepLynxApiKey,
         String deepLynxApiSecret,
         String p6URL,
@@ -12,11 +12,11 @@ public class SQLAction {
         String p6Username,
         String p6Password
     ) {
-        String sql = "REPLACE INTO connections (deepLynxURL, deepLynxContainerId, deepLynxDatasource, deepLynxApiKey, deepLynxApiSecret, p6URL, p6Project, p6Username, p6Password)\n"
+        String sql = "REPLACE INTO connections (deepLynxURL, deepLynxContainerId, deepLynxDatasourceId, deepLynxApiKey, deepLynxApiSecret, p6URL, p6Project, p6Username, p6Password)\n"
                    + "    VALUES("
                    + "'" + deepLynxURL + "', "
                    + "'" + deepLynxContainerId + "', "
-                   + "'" + deepLynxDatasource + "', "
+                   + "'" + deepLynxDatasourceId + "', "
                    + "'" + deepLynxApiKey + "', "
                    + "'" + deepLynxApiSecret + "', "
                    + "'" + p6URL + "', "
@@ -30,7 +30,7 @@ public class SQLAction {
     public static String deleteConnectionsEntry(
         String deepLynxURL,
         String deepLynxContainerId,
-        String deepLynxDatasource,
+        String deepLynxDatasourceId,
         String deepLynxApiKey,
         String deepLynxApiSecret,
         String p6URL,
@@ -42,7 +42,7 @@ public class SQLAction {
                    + "    WHERE("
                    + "deepLynxURL = '" + deepLynxURL + "' AND "
                    + "deepLynxContainerId = '" + deepLynxContainerId + "' AND "
-                   + "deepLynxDatasource = '" + deepLynxDatasource + "' AND "
+                   + "deepLynxDatasourceId = '" + deepLynxDatasourceId + "' AND "
                    + "deepLynxApiKey = '" + deepLynxApiKey + "' AND "
                    + "deepLynxApiSecret = '" + deepLynxApiSecret + "' AND "
                    + "p6URL = '" + p6URL + "' AND "
@@ -54,7 +54,7 @@ public class SQLAction {
     }
 
     public static String getConnections() {
-        String sql = "SELECT deepLynxURL, deepLynxContainerId, deepLynxDatasource, deepLynxApiKey, deepLynxApiSecret, p6URL, p6Project, p6Username, p6Password\n"
+        String sql = "SELECT deepLynxURL, deepLynxContainerId, deepLynxDatasourceId, deepLynxApiKey, deepLynxApiSecret, p6URL, p6Project, p6Username, p6Password\n"
                    + "    FROM connections;";
         return sql;
     }

@@ -6,7 +6,7 @@ public class SQLMigration {
                    + "    id integer PRIMARY KEY,\n"
                    + "    deepLynxURL text NOT NULL,\n"
                    + "    deepLynxContainerId text NOT NULL,\n"
-                   + "    deepLynxDatasource text NOT NULL,\n"
+                   + "    deepLynxDatasourceId text NOT NULL,\n"
                    + "    deepLynxApiKey text NOT NULL,\n"
                    + "    deepLynxApiSecret blob NOT NULL,\n"
                    + "    p6URL text NOT NULL,\n"
@@ -28,7 +28,7 @@ public class SQLMigration {
 
     public static String createConnectionsUniqueId() {
         String sql = "CREATE UNIQUE INDEX IF NOT EXISTS connections_idx\n"
-                   + "    on connections (deepLynxURL, deepLynxContainerId, deepLynxDatasource);";
+                   + "    on connections (deepLynxURL, deepLynxContainerId, deepLynxDatasourceId);";
         return sql;
     }
 

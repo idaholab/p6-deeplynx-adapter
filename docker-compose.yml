@@ -6,6 +6,7 @@ services:
     volumes:
       - ./src/main/java/com/example/p6:/var/app/main/java/com/example/p6
       - ./src/sqlite:/var/app/sqlite
+      - ./filestore:/filestore
     env_file:
       - .env
     ports:
@@ -13,3 +14,7 @@ services:
     platform: "linux/amd64"
     extra_hosts:
       - "${P6_HOSTNAME}:${P6_IP_ADDRESS}"
+
+volumes:
+    filestore:
+        driver: local

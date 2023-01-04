@@ -108,7 +108,7 @@ public class SQLConnect {
             stmt.execute(sqlact.replaceIntoConnectionsEntry(
                 connection_map.get("deepLynxURL"),
                 connection_map.get("deepLynxContainerId"),
-                connection_map.get("deepLynxDatasource"),
+                connection_map.get("deepLynxDatasourceId"),
                 connection_map.get("deepLynxApiKey"),
                 encDLAPISecretString,
                 connection_map.get("p6URL"),
@@ -149,7 +149,7 @@ public class SQLConnect {
             stmt.execute(sqlact.deleteConnectionsEntry(
                 connection_map.get("deepLynxURL"),
                 connection_map.get("deepLynxContainerId"),
-                connection_map.get("deepLynxDatasource"),
+                connection_map.get("deepLynxDatasourceId"),
                 connection_map.get("deepLynxApiKey"),
                 encDLAPISecretString,
                 connection_map.get("p6URL"),
@@ -219,7 +219,7 @@ public class SQLConnect {
 
                 tempMap.put("deepLynxURL", rs.getString("deepLynxURL"));
                 tempMap.put("deepLynxContainerId", rs.getString("deepLynxContainerId"));
-                tempMap.put("deepLynxDatasource", rs.getString("deepLynxDatasource"));
+                tempMap.put("deepLynxDatasourceId", rs.getString("deepLynxDatasourceId"));
                 tempMap.put("deepLynxApiKey", rs.getString("deepLynxApiKey"));
                 tempMap.put("deepLynxApiSecret", decDLAPISecret);
                 tempMap.put("p6URL", rs.getString("p6URL"));

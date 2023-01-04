@@ -46,20 +46,6 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 
 		dlService.authenticate();
 
-		// boolean containerExists = dlService.checkContainer();
-		// if (!containerExists) {
-		// 	response.setStatus("FAILURE");
-		// 	response.setMsg("FAILURE. Container does not exist!");
-		// 	return response;
-		// }
-
-		Date dataSourceDate = dlService.checkDataSource();
-		if (dataSourceDate == null) {
-			response.setStatus("FAILURE");
-			response.setMsg("FAILURE. Data source not found or could not be created!");
-			return response;
-		}
-
 		session = new P6ServiceSession(env.getUserName(), env.getPassword(), databaseInstance, env.getP6URL());
 		List<ActivityFieldType> fields = new ArrayList<ActivityFieldType>();
 
