@@ -6,11 +6,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import java.util.HashMap;
-import java.util.ArrayList;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.HttpURLConnection;
+import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Timer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,23 +52,32 @@ public class P6Controller {
 	}
 
 	/**
-    * Return the status of the connection to the P6 datasource
-    */
+		* Return the status of the connection to the P6 datasource
+		*/
 	@GetMapping("/status")
-	public HashMap<String, String> status() {
+	public int status() {
+		// todo: should this cycle through all P6urls in sqlite/p6.db?
+		String p6url = "http://p6-prd-mw:7002/p6ws/services";
+		// String p6url = env.getP6URL();
+		int status = 400;
 
-		// TODO Jack: add code to test the connection to P6 and return a status
-
-		HashMap<String, String> status_map = new HashMap<String, String>();
-		SQLConnect sqlconnect = new SQLConnect();
-
-		if (sqlconnect.connect()) {
-			sqlconnect.addLog("GET | /status");
-			status_map.put("sql_driver_name", sqlconnect.getDriverName());
-			sqlconnect.close();
+		try {
+			URL url = new URL(p6url);
+			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+			conn.setRequestMethod("GET");
+			status = conn.getResponseCode();
+			conn.disconnect();
+		} catch (MalformedURLException e) {
+			System.out.println("MalformedURLException. StackTrace: ");
+			e.printStackTrace();
+			LOGGER.log(Level.SEVERE, e.toString(), e);
+		} catch (Exception e) {
+			System.out.println("Exception. StackTrace: ");
+			e.printStackTrace();
+			LOGGER.log(Level.SEVERE, e.toString(), e);
 		}
 
-		return status_map;
+		return status;
 	}
 
 	/**
