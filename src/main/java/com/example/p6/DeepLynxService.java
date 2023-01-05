@@ -16,9 +16,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.HashMap;
@@ -32,6 +35,7 @@ public class DeepLynxService {
 	private String apiKey = null;
 	private String apiSecret = null;
 	private String token = null;
+	private String projectID;
 
 	public String getToken() {
 		return token;
@@ -47,6 +51,7 @@ public class DeepLynxService {
 		this.apiSecret = env.getApiSecret();
 		this.containerID = env.getContainerId();
 		this.dataSourceID = env.getDataSourceId();
+		this.projectID = env.getProjectID();
 	}
 
 	public void authenticate() {
@@ -75,6 +80,31 @@ public class DeepLynxService {
 		} else {
 			LOGGER.log(Level.INFO, "Successful manual import to Deep Lynx");
 		}
+	}
+
+	public void deleteNodes(List<String> p6Ids) {
+		// query
+		String urlQuery = env.getDeepLynxURL() + "/containers/" + this.containerID + "/data";
+		// todo: now this code is typemapping dependent..
+		String body = "{\"query\":\"{\\r\\n    metatypes{\\r\\n        Activity(\\r\\n            ProjectId: {operator: \\\"eq\\\", value :\\\"" + this.projectID + "\\\"}\\r\\n            _record: {data_source_id: {operator: \\\"eq\\\", value:\\\"" + this.dataSourceID + "\\\"}}\\r\\n        ) {\\r\\n            Id\\r\\n            _deep_lynx_id\\r\\n        }\\r\\n    }\\r\\n}\\r\\n\",\"variables\":{}}";
+		JSONObject queryObj = this.makeHTTPRequest(urlQuery, "POST", body, null);
+		JSONArray queryData = queryObj.getJSONObject("data").getJSONObject("metatypes").getJSONArray("Activity");
+		// process
+		String activityIdDL;
+		List<String> nodesToDelete = new ArrayList<String>();
+		for (int i = 0; i < queryData.length(); i++) {
+			activityIdDL = queryData.getJSONObject(i).getString("Id");
+			// check if activity Id is in DL that is no longer in P6
+			if (!p6Ids.contains(activityIdDL)) {
+				nodesToDelete.add(queryData.getJSONObject(i).getString("_deep_lynx_id"));
+			}
+		}
+		// delete
+		String urlDelete;
+		 for (String nodeId : nodesToDelete) {
+			 urlDelete = env.getDeepLynxURL() + "/containers/" + this.containerID + "/graphs/nodes/" + nodeId;
+			 this.makeHTTPRequest(urlDelete, "DELETE", null, null);
+		 }
 	}
 
 	public JSONObject makeHTTPRequest(String path, String method, String body, HashMap<String, String> headers) {

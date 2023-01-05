@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -93,14 +94,16 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		}
 
 		JSONArray activityList = new JSONArray();
+		List<String> activityIDList = new ArrayList<String>();
 
 		for (com.primavera.ws.p6.activity.Activity act : getActivities(session, env.getProjectID(), fields)) {
 			// need the projectObjectId to filter with in ActivitiesWrapper.getRelationships
 			// todo: this saves the last projectObjectId; only works since all the projectObjectId's are the same
 			projectObjectId = act.getProjectObjectId();
+			String activityId = act.getId();
 
 			JSONObject activity = new JSONObject();
-			activity.put("Id", act.getId());
+			activity.put("Id", activityId);
 			activity.put("ProjectId", act.getProjectId());
 			activity.put("WBSCode", act.getWBSCode());
 			activity.put("WBSName", act.getWBSName());
@@ -117,6 +120,7 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 			activity.put("CompletedDuration", act.getAtCompletionDuration());
 			activity.put("LastUpdateDate", this.translateDate(act.getLastUpdateDate().getValue()));
 			activityList.put(activity);
+			activityIDList.add(activityId);
 		}
 
 		// write json to file and import
@@ -148,6 +152,8 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		}
 
 		response.setMsg(msg.toString());
+
+		dlService.deleteNodes(activityIDList);
 
 		return response;
 	}
