@@ -72,16 +72,11 @@ spec:
           volumeMounts:
             - mountPath: /var/app/sqlite
               name: app-pv
-            - mountPath: /filestore
-              name: app-fs
       restartPolicy: Always
       volumes:
         - name: app-pv
           persistentVolumeClaim:
             claimName: app-pv
-        - name: app-fs
-          persistentVolumeClaim:
-            claimName: app-fs
 
 # Service
 ---

@@ -8,7 +8,6 @@ services:
     volumes:
       - ./src/main/java/com/example/p6:/var/app/main/java/com/example/p6
       - ./src/sqlite:/var/app/sqlite
-      - ./filestore:/filestore
     env_file:
       - .env
     ports:
