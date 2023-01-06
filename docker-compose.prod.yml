@@ -6,6 +6,7 @@ services:
     entrypoint: ["/bin/sh", "-c", "nginx -g 'daemon off;' & java -jar /var/app/target/p6-0.0.1-SNAPSHOT.jar"]
     volumes:
       - ./src/sqlite:/var/app/sqlite
+      - ./filestore:/filestore
     env_file:
       - .env
     ports:
