@@ -102,8 +102,11 @@ public class P6Controller {
 		try (BufferedReader br = new BufferedReader(new FileReader("/var/app/sqlite/Log.txt"))) {
 			String line;
 
+			int count = 0;
+
 			while ((line = br.readLine()) != null) {
-				log_map.put(line, br.readLine());
+				log_map.put(String.valueOf(count), line);
+				count += 1;
 			}
 			br.close();
 		}
