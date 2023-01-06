@@ -15,11 +15,16 @@ import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Base64;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
 * Class for connecting to the adapter's SQLite instance, for storing
 *    configuration data and for logging activity and access.
 */
 public class SQLConnect {
+
+    private static final Logger LOGGER = Logger.getLogger( Logger.GLOBAL_LOGGER_NAME );
 
     public static Connection conn = null;
     private static String url = System.getenv("P6_DB_LOC"); // TODO: replace with env var reference.
@@ -31,11 +36,11 @@ public class SQLConnect {
     public static boolean connect() {
         try {
             conn = DriverManager.getConnection(url);
-            System.out.println("Connection to SQLite has been established.");
+            LOGGER.log(Level.INFO, "Connection to SQLite has been established.");
             boolean migrateSuccess = migrate();
             return migrateSuccess;
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+            LOGGER.log(Level.SEVERE, e.getMessage());
             return false;
         }
     }
@@ -46,14 +51,14 @@ public class SQLConnect {
     public static boolean close() {
         try {
             if (conn != null) {
-                System.out.println("Connection to SQLite has been closed.");
+                LOGGER.log(Level.INFO, "Connection to SQLite has been closed.");
                 conn.close();
             } else {
-                System.out.println("Connection to SQLite not closed (was already null).");
+                LOGGER.log(Level.INFO, "Connection to SQLite not closed (was already null).");
             }
             return true;
         } catch (SQLException ex) {
-            System.out.println(ex.getMessage());
+            LOGGER.log(Level.SEVERE, ex.getMessage());
             return false;
         }
     }
@@ -74,11 +79,11 @@ public class SQLConnect {
                 stmt.execute(sqlmig.createConnectionsUniqueId());
                 return true;
             } else {
-                System.out.println("Migration to SQLite not completed (connection was null).");
+                LOGGER.log(Level.SEVERE, "Migration to SQLite not completed (connection was null).");
                 return false;
             }
         } catch (SQLException ex) {
-            System.out.println(ex.getMessage());
+            LOGGER.log(Level.SEVERE, ex.getMessage());
             return false;
         }
     }
@@ -119,7 +124,7 @@ public class SQLConnect {
             return true;
 
         } catch (Exception ex) {
-            System.out.println(ex.getMessage());
+            LOGGER.log(Level.SEVERE, ex.getMessage());
             return false;
         }
     }
@@ -160,7 +165,7 @@ public class SQLConnect {
             return true;
 
         } catch (Exception ex) {
-            System.out.println(ex.getMessage());
+            LOGGER.log(Level.SEVERE, ex.getMessage());
             return false;
         }
     }
@@ -184,7 +189,7 @@ public class SQLConnect {
             return true;
 
         } catch (Exception ex) {
-            System.out.println("addLog() FAILURE | " + ex.getMessage());
+            LOGGER.log(Level.SEVERE, ex.getMessage());
             return false;
         }
     }
@@ -230,7 +235,7 @@ public class SQLConnect {
                 connectionsList.add(tempMap);
             }
         } catch (Exception ex) {
-            System.out.println(ex.getMessage());
+            LOGGER.log(Level.SEVERE, ex.getMessage());
         }
 
         return connectionsList;
@@ -249,7 +254,7 @@ public class SQLConnect {
                 return "null";
             }
         } catch (SQLException ex) {
-            System.out.println(ex.getMessage());
+            LOGGER.log(Level.SEVERE, ex.getMessage());
             return "null";
         }
 
@@ -260,7 +265,7 @@ public class SQLConnect {
     */
     public static void main(String[] args) {
         connect();
-        System.out.println("This database driver is " + getDriverName());
+        LOGGER.log(Level.INFO, "This database driver is " + getDriverName());
         close();
     }
 }
