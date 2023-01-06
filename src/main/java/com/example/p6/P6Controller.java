@@ -6,11 +6,15 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import java.util.HashMap;
-import java.util.ArrayList;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.UnknownHostException;
+import java.net.URL;
+import java.net.HttpURLConnection;
+import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Timer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,24 +53,52 @@ public class P6Controller {
 	}
 
 	/**
-    * Return the status of the connection to the P6 datasource
-    */
+		* Return the status of the connection to the P6 datasource
+		*/
+		// todo: need to change how we add extra_hosts in docker-compose file
 	@GetMapping("/status")
 	public HashMap<String, String> status() {
-
-		// TODO Jack: add code to test the connection to P6 and return a status
-
 		HashMap<String, String> status_map = new HashMap<String, String>();
-		SQLConnect sqlconnect = new SQLConnect();
+		// get status for P6 dev
+		String p6url = "http://p6-dev-mw:7002/p6ws/services/";
+		status_map.put(p6url, p6Status(p6url));
 
+		// get status for each unique p6URL from configuration stored in p6.db
+		SQLConnect sqlconnect = new SQLConnect();
 		if (sqlconnect.connect()) {
-			sqlconnect.addLog("GET | /status");
-			status_map.put("sql_driver_name", sqlconnect.getDriverName());
+			ArrayList<HashMap<String, String>> connections = sqlconnect.getConnections();
+			// loop over connections
+			for (int i = 0; i < connections.size(); i++) {
+				HashMap<String, String> connection = connections.get(i);
+				p6url = connection.get("p6URL");
+				status_map.put(p6url, p6Status(p6url));
+			}
 			sqlconnect.close();
+		} else {
+			LOGGER.log(Level.INFO, "Cannot connect to DB");
 		}
 
 		return status_map;
 	}
+
+	public String p6Status(String p6url) {
+		try {
+			URL url = new URL(p6url);
+			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+			conn.setRequestMethod("GET");
+			String status = Integer.toString(conn.getResponseCode());
+			conn.disconnect();
+			return status;
+		} catch (UnknownHostException e) {
+			LOGGER.log(Level.SEVERE, e.toString(), e);
+			return "Unknown Host";
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE, e.toString(), e);
+			return e.toString();
+		}
+	}
+
+
 
 	/**
     * Create an entry in the connections table for the adapter to run on

@@ -33,47 +33,48 @@ public class Scheduler {
 
 				// loop over connections
 				for (int i = 0; i < connections.size(); i++) {
-					HashMap<String, String> connection = connections.get(i);
+					try {
+						HashMap<String, String> connection = connections.get(i);
+						ReadActivitiesWrapper readActivitiesWrapper = new ReadActivitiesWrapper();
+						Environment env = new Environment(
+							connection.get("p6Username")
+							,connection.get("p6Password")
+							,connection.get("deepLynxURL")
+							,connection.get("deepLynxContainerId")
+							,connection.get("deepLynxDatasourceId")
+							,connection.get("deepLynxApiKey")
+							,connection.get("deepLynxApiSecret")
+							,connection.get("p6URL")
+							,connection.get("p6Project")
+						);
 
-					ReadActivitiesWrapper readActivitiesWrapper = new ReadActivitiesWrapper();
+						P6ServiceResponse response = readActivitiesWrapper.mapActivities(env, 1);
+						LOGGER.log(Level.INFO, "P6 Service Response: " + response.getMsg());
+						sqlconnect.addLog("P6 Service Response: " + response.getMsg());
 
-					Environment env = new Environment(
-						connection.get("p6Username")
-						,connection.get("p6Password")
-						,connection.get("deepLynxURL")
-						,connection.get("deepLynxContainerId")
-						,connection.get("deepLynxDatasourceId")
-						,connection.get("deepLynxApiKey")
-						,connection.get("deepLynxApiSecret")
-						,connection.get("p6URL")
-						,connection.get("p6Project")
-					);
+						// todo: mapRelationships must be after mapActivities; this should probably be refactored a little
+						P6ServiceResponse response_rels = readActivitiesWrapper.mapRelationships();
+						LOGGER.log(Level.INFO, "P6 Service Response_rels: " + response_rels.getMsg());
+						sqlconnect.addLog("P6 Service Response_rels: " + response_rels.getMsg());
 
+						P6ServiceResponse response_codes = readActivitiesWrapper.mapActivityCodeAssignments(env);
+						LOGGER.log(Level.INFO, "P6 Service Response_codes: " + response_codes.getMsg());
+						sqlconnect.addLog("P6 Service Response_codes: " + response_codes.getMsg());
+					}
+					catch(Exception e) {
+					  LOGGER.log(Level.SEVERE, "Connection index " + i + " failed");
+					}
 
-					P6ServiceResponse response = readActivitiesWrapper.mapActivities(env, 1);
-					LOGGER.log(Level.INFO, "P6 Service Response: " + response.getMsg());
-					sqlconnect.addLog("P6 Service Response: " + response.getMsg());
-
-					// todo: mapRelationships must be after mapActivities; this should probably be refactored a little
-					P6ServiceResponse response_rels = readActivitiesWrapper.mapRelationships();
-					LOGGER.log(Level.INFO, "P6 Service Response_rels: " + response_rels.getMsg());
-					sqlconnect.addLog("P6 Service Response_rels: " + response_rels.getMsg());
-
-					P6ServiceResponse response_codes = readActivitiesWrapper.mapActivityCodeAssignments(env);
-					LOGGER.log(Level.INFO, "P6 Service Response_codes: " + response_codes.getMsg());
-					sqlconnect.addLog("P6 Service Response_codes: " + response_codes.getMsg());
 				}
 				sqlconnect.close();
 
 			} else {
 				System.out.println("Cannot connect to DB");
+				LOGGER.log(Level.SEVERE, "Cannot connect to DB");
 			}
 
 		} catch (Exception e) {
-			System.out.println("Scheduler failed | " + e.toString());
+			LOGGER.log(Level.SEVERE, "Scheduler failed | " + e.toString());
 		}
-
-
-		// System.out.println("HIT");
 	}
 }

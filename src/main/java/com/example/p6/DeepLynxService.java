@@ -57,10 +57,6 @@ public class DeepLynxService {
 	public void authenticate() {
 		String path = env.getDeepLynxURL() + "/oauth/token";
 
-		System.out.println(this.apiKey);
-		System.out.println(this.apiSecret);
-		System.out.println(this.containerID);
-
 		// supply api keys and expiry via hashmap
 		HashMap<String, String> headers = new HashMap<String, String>();
 		headers.put("x-api-key", this.apiKey);

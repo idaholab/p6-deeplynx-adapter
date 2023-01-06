@@ -91,6 +91,8 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 			System.out.println("IntegrationFault. StackTrace: ");
 			e.printStackTrace();
 			LOGGER.log(Level.SEVERE, e.toString(), e);
+		} catch (Exception e) {
+			LOGGER.log(Level.INFO, "AuthenticationService failed with p6url " + env.getP6URL() + " and username " + env.getUserName(), e);
 		}
 
 		JSONArray activityList = new JSONArray();
