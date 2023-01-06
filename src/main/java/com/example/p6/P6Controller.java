@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.io.File;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
@@ -35,6 +37,7 @@ public class P6Controller {
 			sqlconnect.addLog("GET | /");
 			sqlconnect.close();
 		}
+		LOGGER.log(Level.INFO, "/");
 		return "P6 adapter for Deep Lynx";
 	}
 
@@ -49,13 +52,14 @@ public class P6Controller {
 			sqlconnect.addLog("GET | /health");
 			sqlconnect.close();
 		}
+		LOGGER.log(Level.INFO, "/health");
 		return "OK";
 	}
 
 	/**
-		* Return the status of the connection to the P6 datasource
-		*/
-		// todo: need to change how we add extra_hosts in docker-compose file
+	* Return the status of the connection to the P6 datasource
+	*/
+	// todo: need to change how we add extra_hosts in docker-compose file
 	@GetMapping("/status")
 	public HashMap<String, String> status() {
 		HashMap<String, String> status_map = new HashMap<String, String>();
@@ -79,6 +83,32 @@ public class P6Controller {
 		}
 
 		return status_map;
+	}
+
+	/**
+    * Logs query
+    */
+	@GetMapping("/logs")
+	public HashMap<String, String> logs() throws IOException {
+		SQLConnect sqlconnect = new SQLConnect();
+
+		HashMap<String, String> log_map = new HashMap<String, String>();
+
+		if (sqlconnect.connect()) {
+			sqlconnect.addLog("GET | /logs");
+			sqlconnect.close();
+		}
+
+		try (BufferedReader br = new BufferedReader(new FileReader("/filestore/Log.txt"))) {
+			String line;
+
+			while ((line = br.readLine()) != null) {
+				log_map.put(line, br.readLine());
+			}
+			br.close();
+		}
+
+		return log_map;
 	}
 
 	public String p6Status(String p6url) {
