@@ -99,7 +99,7 @@ public class P6Controller {
 			sqlconnect.close();
 		}
 
-		try (BufferedReader br = new BufferedReader(new FileReader("/filestore/Log.txt"))) {
+		try (BufferedReader br = new BufferedReader(new FileReader("/var/app/sqlite/Log.txt"))) {
 			String line;
 
 			while ((line = br.readLine()) != null) {
