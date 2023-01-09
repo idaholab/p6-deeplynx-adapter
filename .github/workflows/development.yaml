@@ -9,11 +9,20 @@ jobs:
     environment: development
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3 
-        with: 
+        uses: actions/checkout@v3
+        with:
           repository: Digital-Engineering/p6_deeplynx_adapter
           ref: development
           token: ${{ secrets.GH_TOKEN }}
+
+      - shell: bash
+        name: Add Certificates
+        env:
+          CERT: ${{ secrets.CERT }}
+        run: |
+          cd $GITHUB_WORKSPACE/src/lib
+          echo $CERT > dldev.cer
+
       - shell: bash
         name: ACR build
         env:
@@ -33,7 +42,7 @@ jobs:
 
       - shell: bash
         name: Kubernetes Manifest Environment
-        env: 
+        env:
           KUBE_CONFIGMAP: ${{secrets.KUBE_CONFIGMAP}}
           CI_REGISTRY: ${{secrets.CI_REGISTRY}}
           CI_REGISTRY_PATH: ${{secrets.CI_REGISTRY_PATH}}
