@@ -7,6 +7,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+// TODO: remove when moving to prod
+import org.apache.commons.io.FileUtils;
+
 import java.io.File;
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -191,6 +194,32 @@ public class P6Controller {
 
 			sqlconnect.close();
 		}
+
+		return status_map;
+	}
+
+	/**
+    * Delete static resources
+	* TODO: remove before moving to prod
+    */
+	@DeleteMapping("/nuke")
+	public HashMap<String, String> delete() {
+
+		HashMap<String, String> status_map = new HashMap<String, String>();
+
+		status_map.put("nuke_success", "false");
+
+		LOGGER.log(Level.INFO, "POST | /nuke");
+
+		try {
+			FileUtils.cleanDirectory(new File("/var/app/sqlite"));
+			File remadeLog = new File("/var/app/sqlite/Log.txt");
+			remadeLog.createNewFile();
+			status_map.put("nuke_success", "true");
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE, e.toString());
+		}
+		
 
 		return status_map;
 	}
