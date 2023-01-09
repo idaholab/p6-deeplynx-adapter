@@ -55,7 +55,7 @@ public class P6Controller {
 	public HashMap<String, String> status() {
 		HashMap<String, String> status_map = new HashMap<String, String>();
 		// get status for P6 dev
-		String p6url = "http://p6-dev-mw:7002/p6ws/services/";
+		String p6url = "http://10.53.2.252:7002/p6ws/services/";
 		status_map.put(p6url, p6Status(p6url));
 
 		// get status for each unique p6URL from configuration stored in p6.db
