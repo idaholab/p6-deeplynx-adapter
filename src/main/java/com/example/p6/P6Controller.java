@@ -223,5 +223,41 @@ public class P6Controller {
 
 		return status_map;
 	}
+
+	/**
+    * Create an entry in the connections table for the adapter to run on
+    */
+	@PostMapping("/add_cert")
+	public HashMap<String, String> add_cert(@RequestBody HashMap<String, String> payload) {
+
+		HashMap<String, String> status_map = new HashMap<String, String>();
+
+		SQLConnect sqlconnect = new SQLConnect();
+		status_map.put("cert_success", "false");
+
+
+
+		LOGGER.log(Level.INFO, "POST | /add_cert");
+
+		try {
+			File newFile = new File ("/var/app/lib/dldev.cer");
+			// newFile.createNewFile();
+			FileUtils.writeStringToFile(newFile, payload.get("cer_string"), "UTF8", false);
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE, e.toString());
+		}
+
+		if (sqlconnect.connect()) {
+			int rows_affected = sqlconnect.addConnection(payload);
+			if (rows_affected > 0) {
+				status_map.put("configuration_success", "true");
+			}
+			status_map.put("rows_affected", String.valueOf(rows_affected));
+			
+			sqlconnect.close();
+		}
+
+		return status_map;
+	}
 }
 
