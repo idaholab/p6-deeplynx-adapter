@@ -213,8 +213,8 @@ public class P6Controller {
 
 		try {
 			FileUtils.cleanDirectory(new File("/var/app/sqlite"));
-			File remadeLog = new File("/var/app/sqlite/Log.txt");
-			remadeLog.createNewFile();
+			// TODO: find a way to recreate the logger
+			P6Logger.setup();
 			status_map.put("nuke_success", "true");
 		} catch (Exception e) {
 			LOGGER.log(Level.SEVERE, e.toString());
