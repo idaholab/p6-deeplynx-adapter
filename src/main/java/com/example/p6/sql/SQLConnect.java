@@ -75,7 +75,7 @@ public class SQLConnect {
                 // run migrations
                 SQLMigration sqlmig = new SQLMigration();
                 stmt.execute(sqlmig.createConnectionsTable());
-                stmt.execute("ALTER TABLE connections RENAME COLUMN deepLynxDatasource TO deepLynxDatasourceId");
+                stmt.execute("ALTER TABLE connections\nRENAME COLUMN deepLynxDatasource TO deepLynxDatasourceId;");
                 stmt.execute(sqlmig.createConnectionsUniqueId());
                 return true;
             } else {
