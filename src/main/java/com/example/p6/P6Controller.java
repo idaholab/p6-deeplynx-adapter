@@ -31,13 +31,7 @@ public class P6Controller {
     */
 	@GetMapping("/")
 	public String index() {
-		SQLConnect sqlconnect = new SQLConnect();
-
-		if (sqlconnect.connect()) {
-			sqlconnect.addLog("GET | /");
-			sqlconnect.close();
-		}
-		LOGGER.log(Level.INFO, "/");
+		LOGGER.log(Level.INFO, "GET | /");
 		return "P6 adapter for Deep Lynx";
 	}
 
@@ -46,13 +40,7 @@ public class P6Controller {
     */
 	@GetMapping("/health")
 	public String health() {
-		SQLConnect sqlconnect = new SQLConnect();
-
-		if (sqlconnect.connect()) {
-			sqlconnect.addLog("GET | /health");
-			sqlconnect.close();
-		}
-		LOGGER.log(Level.INFO, "/health");
+		LOGGER.log(Level.INFO, "GET | /health");
 		return "OK";
 	}
 
@@ -90,14 +78,9 @@ public class P6Controller {
     */
 	@GetMapping("/logs")
 	public HashMap<String, String> logs() throws IOException {
-		SQLConnect sqlconnect = new SQLConnect();
-
 		HashMap<String, String> log_map = new HashMap<String, String>();
 
-		if (sqlconnect.connect()) {
-			sqlconnect.addLog("GET | /logs");
-			sqlconnect.close();
-		}
+		LOGGER.log(Level.INFO, "GET | /logs");
 
 		try (BufferedReader br = new BufferedReader(new FileReader("/var/app/sqlite/Log.txt"))) {
 			String line;
@@ -114,6 +97,9 @@ public class P6Controller {
 		return log_map;
 	}
 
+	/**
+    * Connection status of P6 instance
+    */
 	public String p6Status(String p6url) {
 		try {
 			URL url = new URL(p6url);
@@ -132,7 +118,6 @@ public class P6Controller {
 	}
 
 
-
 	/**
     * Create an entry in the connections table for the adapter to run on
     */
@@ -144,10 +129,15 @@ public class P6Controller {
 		SQLConnect sqlconnect = new SQLConnect();
 		status_map.put("configuration_success", "false");
 
+		LOGGER.log(Level.INFO, "POST | /configure");
+
 		if (sqlconnect.connect()) {
-			sqlconnect.addLog("POST | /configure");
-			boolean configuration_success = sqlconnect.addConnection(payload);
-			status_map.put("configuration_success", String.valueOf(configuration_success));
+			int rows_affected = sqlconnect.addConnection(payload);
+			if (rows_affected > 0) {
+				status_map.put("configuration_success", "true");
+			}
+			status_map.put("rows_affected", String.valueOf(rows_affected));
+			
 			sqlconnect.close();
 		}
 
@@ -165,10 +155,14 @@ public class P6Controller {
 		SQLConnect sqlconnect = new SQLConnect();
 		status_map.put("update_success", "false");
 
+		LOGGER.log(Level.INFO, "POST | /update");
+
 		if (sqlconnect.connect()) {
-			sqlconnect.addLog("PUT | /update");
-			boolean update_success = sqlconnect.addConnection(payload);
-			status_map.put("update_success", String.valueOf(update_success));
+			int rows_affected = sqlconnect.updateConnection(payload);
+			if (rows_affected > 0) {
+				status_map.put("update_success", "true");
+			}
+			status_map.put("rows_affected", String.valueOf(rows_affected));
 			sqlconnect.close();
 		}
 
@@ -186,10 +180,15 @@ public class P6Controller {
 		SQLConnect sqlconnect = new SQLConnect();
 		status_map.put("delete_success", "false");
 
+		LOGGER.log(Level.INFO, "POST | /delete");
+
 		if (sqlconnect.connect()) {
-			sqlconnect.addLog("DELETE | /delete");
-			boolean delete_success = sqlconnect.deleteConnection(payload);
-			status_map.put("delete_success", String.valueOf(delete_success));
+			int rows_affected = sqlconnect.deleteConnection(payload);
+			if (rows_affected > 0) {
+				status_map.put("delete_success", "true");
+			}
+			status_map.put("rows_affected", String.valueOf(rows_affected));
+
 			sqlconnect.close();
 		}
 

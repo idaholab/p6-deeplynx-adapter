@@ -17,15 +17,6 @@ public class SQLMigration {
         return sql;
     }
 
-    public static String createLogsTable() {
-        String sql = "CREATE TABLE IF NOT EXISTS logs (\n"
-                   + "    id integer PRIMARY KEY,\n"
-                   + "    datetime integer NOT NULL,\n"
-                   + "    body text NOT NULL\n"
-                   + ");\n";
-        return sql;
-    }
-
     public static String createConnectionsUniqueId() {
         String sql = "CREATE UNIQUE INDEX IF NOT EXISTS connections_idx\n"
                    + "    on connections (deepLynxURL, deepLynxContainerId, deepLynxDatasourceId);";

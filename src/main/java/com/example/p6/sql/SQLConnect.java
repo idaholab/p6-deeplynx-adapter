@@ -75,7 +75,7 @@ public class SQLConnect {
                 // run migrations
                 SQLMigration sqlmig = new SQLMigration();
                 stmt.execute(sqlmig.createConnectionsTable());
-                stmt.execute(sqlmig.createLogsTable());
+                stmt.execute("ALTER TABLE connections RENAME COLUMN deepLynxDatasource TO deepLynxDatasourceId");
                 stmt.execute(sqlmig.createConnectionsUniqueId());
                 return true;
             } else {
@@ -91,7 +91,7 @@ public class SQLConnect {
     /**
     * Add entry to the connections table, it encrypts the key/password values
     */
-    public static boolean addConnection(HashMap<String, String> connection_map) {
+    public static int addConnection(HashMap<String, String> connection_map) {
         try {
             // setup cipher for encryption
             String key = System.getenv("P6_ENCRYPTION_KEY");
@@ -110,7 +110,7 @@ public class SQLConnect {
 
             // addition
             SQLAction sqlact = new SQLAction();
-            stmt.execute(sqlact.replaceIntoConnectionsEntry(
+            int rowsAffected = stmt.executeUpdate(sqlact.replaceIntoConnectionsEntry(
                 connection_map.get("deepLynxURL"),
                 connection_map.get("deepLynxContainerId"),
                 connection_map.get("deepLynxDatasourceId"),
@@ -121,18 +121,72 @@ public class SQLConnect {
                 connection_map.get("p6Username"),
                 encP6PasswordString
             ));
-            return true;
+            return rowsAffected;
 
         } catch (Exception ex) {
             LOGGER.log(Level.SEVERE, ex.getMessage());
-            return false;
+            return 0;
+        }
+    }
+
+    /**
+    * Add entry to the connections table, it encrypts the key/password values
+    */
+    public static int updateConnection(HashMap<String, String> connection_map) {
+        try {
+            // setup cipher for encryption
+            String key = System.getenv("P6_ENCRYPTION_KEY");
+            Key aesKey = new SecretKeySpec(key.getBytes(), "AES");
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, aesKey);
+
+            // encrypt sensitive values
+            byte[] encP6Password = cipher.doFinal(connection_map.get("p6Password").getBytes());
+            String encP6PasswordString = Base64.getEncoder().encodeToString(encP6Password);
+
+            // initialize statement
+            Statement stmt = conn.createStatement();
+
+            // addition
+            SQLAction sqlact = new SQLAction();
+
+            // get old DL secret
+            ResultSet rs = stmt.executeQuery(sqlact.getConnectionEncDLSecret(
+                connection_map.get("deepLynxURL"),
+                connection_map.get("deepLynxContainerId"),
+                connection_map.get("deepLynxDatasourceId")
+            ));
+
+            int rowsAffected = 0;
+            while (rs.next()) {
+                String old_DL_secret = rs.getString("deepLynxApiSecret");
+
+                // insert updated entry
+                rowsAffected = stmt.executeUpdate(sqlact.replaceIntoConnectionsEntry(
+                    connection_map.get("deepLynxURL"),
+                    connection_map.get("deepLynxContainerId"),
+                    connection_map.get("deepLynxDatasourceId"),
+                    connection_map.get("deepLynxApiKey"),
+                    old_DL_secret,
+                    connection_map.get("p6URL"),
+                    connection_map.get("p6Project"),
+                    connection_map.get("p6Username"),
+                    encP6PasswordString
+                ));
+            }
+            
+            return rowsAffected;
+
+        } catch (Exception ex) {
+            LOGGER.log(Level.SEVERE, ex.getMessage());
+            return 0;
         }
     }
 
     /**
     * Delete an entry from the connections table
     */
-    public static boolean deleteConnection(HashMap<String, String> connection_map) {
+    public static int deleteConnection(HashMap<String, String> connection_map) {
         try {
             // setup cipher for encryption
             String key = System.getenv("P6_ENCRYPTION_KEY");
@@ -141,8 +195,6 @@ public class SQLConnect {
             cipher.init(Cipher.ENCRYPT_MODE, aesKey);
 
             // encrypt sensitive values
-            byte[] encDLAPISecret = cipher.doFinal(connection_map.get("deepLynxApiSecret").getBytes());
-            String encDLAPISecretString = Base64.getEncoder().encodeToString(encDLAPISecret);
             byte[] encP6Password = cipher.doFinal(connection_map.get("p6Password").getBytes());
             String encP6PasswordString = Base64.getEncoder().encodeToString(encP6Password);
 
@@ -151,46 +203,21 @@ public class SQLConnect {
 
             // addition
             SQLAction sqlact = new SQLAction();
-            stmt.execute(sqlact.deleteConnectionsEntry(
+            int rowsAffected = stmt.executeUpdate(sqlact.deleteConnectionsEntry(
                 connection_map.get("deepLynxURL"),
                 connection_map.get("deepLynxContainerId"),
                 connection_map.get("deepLynxDatasourceId"),
                 connection_map.get("deepLynxApiKey"),
-                encDLAPISecretString,
                 connection_map.get("p6URL"),
                 connection_map.get("p6Project"),
                 connection_map.get("p6Username"),
                 encP6PasswordString
             ));
-            return true;
+            return rowsAffected;
 
         } catch (Exception ex) {
             LOGGER.log(Level.SEVERE, ex.getMessage());
-            return false;
-        }
-    }
-
-    /**
-    * Add entry to the logs table
-    */
-    public static boolean addLog(String logText) {
-        try {
-            // get time as integer, convert to string
-            long unixTime = System.currentTimeMillis() / 1000L;
-            String unixTimeString = String.valueOf(unixTime);
-
-            // initialize statement
-            Statement stmt = conn.createStatement();
-
-            // write log
-            SQLAction sqlact = new SQLAction();
-            System.out.println(unixTimeString + " | " + logText);
-            stmt.execute(sqlact.makeLog(unixTimeString, logText));
-            return true;
-
-        } catch (Exception ex) {
-            LOGGER.log(Level.SEVERE, ex.getMessage());
-            return false;
+            return 0;
         }
     }
 
