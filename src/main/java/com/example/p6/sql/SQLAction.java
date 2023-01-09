@@ -32,7 +32,6 @@ public class SQLAction {
         String deepLynxContainerId,
         String deepLynxDatasourceId,
         String deepLynxApiKey,
-        String deepLynxApiSecret,
         String p6URL,
         String p6Project,
         String p6Username,
@@ -44,7 +43,6 @@ public class SQLAction {
                    + "deepLynxContainerId = '" + deepLynxContainerId + "' AND "
                    + "deepLynxDatasourceId = '" + deepLynxDatasourceId + "' AND "
                    + "deepLynxApiKey = '" + deepLynxApiKey + "' AND "
-                   + "deepLynxApiSecret = '" + deepLynxApiSecret + "' AND "
                    + "p6URL = '" + p6URL + "' AND "
                    + "p6Project = '" + p6Project + "' AND "
                    + "p6Username = '" + p6Username + "' AND "
@@ -56,6 +54,20 @@ public class SQLAction {
     public static String getConnections() {
         String sql = "SELECT deepLynxURL, deepLynxContainerId, deepLynxDatasourceId, deepLynxApiKey, deepLynxApiSecret, p6URL, p6Project, p6Username, p6Password\n"
                    + "    FROM connections;";
+        return sql;
+    }
+
+    static String getConnectionEncDLSecret(
+        String deepLynxURL,
+        String deepLynxContainerId,
+        String deepLynxDatasourceId
+    ) {
+        String sql = "SELECT deepLynxApiSecret\n"
+                   + "    FROM connections WHERE("
+                   + "deepLynxURL = '" + deepLynxURL + "' AND "
+                   + "deepLynxContainerId = '" + deepLynxContainerId + "' AND "
+                   + "deepLynxDatasourceId = '" + deepLynxDatasourceId + "'"
+                   + ");";
         return sql;
     }
 

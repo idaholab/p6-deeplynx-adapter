@@ -21,14 +21,14 @@ public class Scheduler {
 
 	// @Scheduled(fixedRate = Scheduler.interval)
 	// @Scheduled(fixedRate = 3600000)
-	@Scheduled(fixedRate = 10000)
+	@Scheduled(fixedRate = 60000)
 	public void adapterLoop() {
 		System.out.println("tick");
 		try {
 			SQLConnect sqlconnect = new SQLConnect();
 
 			if (sqlconnect.connect()) {
-				sqlconnect.addLog("START adapter loop");
+				LOGGER.log(Level.INFO, "START LOOP");
 				ArrayList<HashMap<String, String>> connections = sqlconnect.getConnections();
 
 				// loop over connections
@@ -50,16 +50,13 @@ public class Scheduler {
 
 						P6ServiceResponse response = readActivitiesWrapper.mapActivities(env, 1);
 						LOGGER.log(Level.INFO, "P6 Service Response: " + response.getMsg());
-						sqlconnect.addLog("P6 Service Response: " + response.getMsg());
 
 						// todo: mapRelationships must be after mapActivities; this should probably be refactored a little
 						P6ServiceResponse response_rels = readActivitiesWrapper.mapRelationships();
 						LOGGER.log(Level.INFO, "P6 Service Response_rels: " + response_rels.getMsg());
-						sqlconnect.addLog("P6 Service Response_rels: " + response_rels.getMsg());
 
 						P6ServiceResponse response_codes = readActivitiesWrapper.mapActivityCodeAssignments(env);
 						LOGGER.log(Level.INFO, "P6 Service Response_codes: " + response_codes.getMsg());
-						sqlconnect.addLog("P6 Service Response_codes: " + response_codes.getMsg());
 					}
 					catch(Exception e) {
 					  LOGGER.log(Level.SEVERE, "Connection index " + i + " failed");
@@ -67,6 +64,7 @@ public class Scheduler {
 
 				}
 				sqlconnect.close();
+				LOGGER.log(Level.INFO, "END LOOP");
 
 			} else {
 				System.out.println("Cannot connect to DB");
