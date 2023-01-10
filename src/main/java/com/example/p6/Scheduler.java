@@ -57,8 +57,7 @@ public class Scheduler {
 
 						P6ServiceResponse response_codes = readActivitiesWrapper.mapActivityCodeAssignments(env);
 						LOGGER.log(Level.INFO, "P6 Service Response_codes: " + response_codes.getMsg());
-					}
-					catch(Exception e) {
+					} catch (Exception e) {
 					  LOGGER.log(Level.SEVERE, "Connection index " + i + " failed");
 					}
 

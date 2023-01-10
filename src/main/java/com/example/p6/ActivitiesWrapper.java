@@ -7,6 +7,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.xml.ws.BindingProvider;
 
@@ -26,37 +28,12 @@ import com.primavera.ws.p6.udftype.*;
 
 public class ActivitiesWrapper {
 
+    private static final Logger LOGGER = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+
     protected ArrayList<P6ServiceMessage> errors = new ArrayList<P6ServiceMessage>();
-    protected String log = "";
     protected Map<String,Integer> foundActivityCodes = new HashMap<String,Integer>();
 
     public ActivitiesWrapper() {
-    }
-
-	protected List<com.primavera.ws.p6.activity.Activity> getActivity(P6ServiceSession session, String activityId, String projectID, List<ActivityFieldType> returnParams){
-        String url = session.getP6url() + "ActivityService?wsdl";
-        URL wsdlURL = null;
-
-        try {
-            wsdlURL = new URL(url);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            addError(P6ServiceMessage.MessageType.APPLICATION, "Error creating URL for ActivityService.  URL: " + url + " \nMalformedURLException thrown: " + e.getMessage());
-        }
-
-        ActivityService service = new ActivityService(wsdlURL);
-        ActivityPortType servicePort = service.getActivityPort();
-        session.setUserNameToken((BindingProvider)servicePort);
-
-        List<com.primavera.ws.p6.activity.Activity> results = null;
-
-        try {
-            results = servicePort.readActivities(returnParams,"ProjectId='" + projectID + "' AND Id in ('"+activityId+"')", null);
-        } catch (com.primavera.ws.p6.activity.IntegrationFault e) {
-            e.printStackTrace();
-        }
-
-        return results;
     }
 
 	protected List<com.primavera.ws.p6.activity.Activity> getActivities(P6ServiceSession session, String projectID, List<ActivityFieldType> returnParams){
@@ -68,6 +45,8 @@ public class ActivitiesWrapper {
         } catch (MalformedURLException e) {
             e.printStackTrace();
             addError(P6ServiceMessage.MessageType.APPLICATION, "Error creating URL for ActivityService.  URL: " + url + " \nMalformedURLException thrown: " + e.getMessage());
+        } catch(Exception e) {
+            LOGGER.log(Level.SEVERE, "getActivities wsdlURL failed: " + e.toString());
         }
 
         ActivityService service = new ActivityService(wsdlURL);
@@ -79,36 +58,12 @@ public class ActivitiesWrapper {
         try {
             results = servicePort.readActivities(returnParams,"ProjectId='" + projectID + "'", null);
         } catch (com.primavera.ws.p6.activity.IntegrationFault e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "getActivities failed: " + e.toString());
+        } catch(Exception e) {
+            LOGGER.log(Level.SEVERE, "getActivities failed: " + e.toString());
         }
 
         return results;
-    }
-
-	protected boolean updateActivities(P6ServiceSession session, List<com.primavera.ws.p6.activity.Activity> activities){
-        String url = session.getP6url() + "ActivityService?wsdl";
-        URL wsdlURL = null;
-
-        try {
-            wsdlURL = new URL(url);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            addError(P6ServiceMessage.MessageType.APPLICATION, "Error creating URL for ActivityService.  URL: " + url + " \nMalformedURLException thrown: " + e.getMessage());
-        }
-
-        ActivityService service = new ActivityService(wsdlURL);
-        ActivityPortType servicePort = service.getActivityPort();
-        session.setUserNameToken((BindingProvider)servicePort);
-
-        boolean success = false;
-
-        try {
-        	success = servicePort.updateActivities(activities);
-        } catch (com.primavera.ws.p6.activity.IntegrationFault e) {
-            e.printStackTrace();
-        }
-
-        return success;
     }
 
   protected List<com.primavera.ws.p6.relationship.Relationship> getRelationships(P6ServiceSession session, int projectObjectID, List<RelationshipFieldType> returnParams){
@@ -120,6 +75,8 @@ public class ActivitiesWrapper {
         } catch (MalformedURLException e) {
             e.printStackTrace();
             addError(P6ServiceMessage.MessageType.APPLICATION, "Error creating URL for RelationshipService.  URL: " + url + " \nMalformedURLException thrown: " + e.getMessage());
+        } catch(Exception e) {
+            LOGGER.log(Level.SEVERE, "getRelationships wsdlURL failed: " + e.toString());
         }
 
         RelationshipService service = new RelationshipService(wsdlURL);
@@ -131,7 +88,9 @@ public class ActivitiesWrapper {
         try {
             results = servicePort.readRelationships(returnParams,"SuccessorProjectObjectId='" + projectObjectID + "'", null);
         } catch (com.primavera.ws.p6.relationship.IntegrationFault e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "getRelationships failed: " + e.toString());
+        } catch(Exception e) {
+            LOGGER.log(Level.SEVERE, "getRelationships failed: " + e.toString());
         }
 
         return results;
@@ -146,22 +105,25 @@ public class ActivitiesWrapper {
           } catch (MalformedURLException e) {
               e.printStackTrace();
               addError(P6ServiceMessage.MessageType.APPLICATION, "Error creating URL for ActivityCodeService.  URL: " + url + " \nMalformedURLException thrown: " + e.getMessage());
+          } catch(Exception e) {
+              LOGGER.log(Level.SEVERE, "getActivityCodes wsdlURL failed: " + e.toString());
           }
 
           ActivityCodeService service = new ActivityCodeService(wsdlURL);
           ActivityCodePortType servicePort = service.getActivityCodePort();
-
-          // todo: check if this needs to happen again..
           session.setUserNameToken((BindingProvider)servicePort);
 
           List<com.primavera.ws.p6.activitycode.ActivityCode> results = null;
 
           try {
+              // todo: figure out how to filter on ProjectObjectId
               // results = servicePort.readActivityCodes(returnParams, null, null);
               results = servicePort.readActivityCodes(returnParams,"ProjectObjectId='158845'", null);
               // results = servicePort.readActivityCodes(returnParams,"ProjectObjectId='" + projectObjectID + "'", null);
           } catch (com.primavera.ws.p6.activitycode.IntegrationFault e) {
-              e.printStackTrace();
+              LOGGER.log(Level.SEVERE, "getActivityCodes failed: " + e.toString());
+          } catch(Exception e) {
+              LOGGER.log(Level.SEVERE, "getActivityCodes failed: " + e.toString());
           }
 
           return results;
@@ -176,6 +138,8 @@ public class ActivitiesWrapper {
         } catch (MalformedURLException e) {
             e.printStackTrace();
             addError(P6ServiceMessage.MessageType.APPLICATION, "Error creating URL for ActivityService.  URL: " + url + " \nMalformedURLException thrown: " + e.getMessage());
+        } catch(Exception e) {
+            LOGGER.log(Level.SEVERE, "getActivityCodeAssignments wsdlURL failed: " + e.toString());
         }
 
         ActivityCodeAssignmentService acservice = new ActivityCodeAssignmentService(wsdlURL);
@@ -186,8 +150,9 @@ public class ActivitiesWrapper {
         try {
             results = acservicePort.readActivityCodeAssignments(returnParams,"ProjectId='" + projectID + "'", null);
         } catch (com.primavera.ws.p6.activitycodeassignment.IntegrationFault e) {
-        // } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "getActivityCodeAssignments failed: " + e.toString());
+        } catch(Exception e) {
+            LOGGER.log(Level.SEVERE, "getActivityCodeAssignments failed: " + e.toString());
         }
 
         return results;
@@ -207,15 +172,6 @@ public class ActivitiesWrapper {
     }
 
     protected void setLog(String log) {
-        Date date = new Date();
-        this.log += date + ":  " + log + "\n";
-    }
-
-    protected String getLog() {
-        return log;
-    }
-
-    protected void clearLog() {
-        log = "";
+        LOGGER.log(Level.SEVERE, "P6ServiceMessage: " + log);
     }
 }
