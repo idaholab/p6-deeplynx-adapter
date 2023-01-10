@@ -239,7 +239,7 @@ public class P6Controller {
 			File newFile = new File ("/var/app/lib/dldev.cer");
 			// newFile.createNewFile();
 			FileUtils.writeStringToFile(newFile, payload.get("cer_string"), "UTF8", false);
-			status_map.put("cert_success", "false");
+			status_map.put("cert_success", "true");
 		} catch (Exception e) {
 			LOGGER.log(Level.SEVERE, e.toString());
 		}
