@@ -21,7 +21,7 @@ RUN mvn install:install-file \
     -Dpackaging=jar \
     -DgeneratePom=true
 
-
+RUN keytool -import -noprompt -trustcacerts -alias dlTrust -file lib/dldev.cer -keystore $JAVA_HOME/lib/security/cacerts -storepass changeit
 
 RUN mvn -Dmaven.wagon.http.ssl.insecure=true dependency:resolve
 
