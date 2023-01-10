@@ -239,6 +239,7 @@ public class P6Controller {
 			File newFile = new File ("/var/app/lib/dldev.cer");
 			// newFile.createNewFile();
 			FileUtils.writeStringToFile(newFile, payload.get("cer_string"), "UTF8", false);
+			Process p = Runtime.getRuntime().exec("keytool -import -noprompt -trustcacerts -alias dlTrust -file lib/dldev.cer -keystore $JAVA_HOME/lib/security/cacerts -storepass changeit");
 			status_map.put("cert_success", "true");
 		} catch (Exception e) {
 			LOGGER.log(Level.SEVERE, e.toString());
