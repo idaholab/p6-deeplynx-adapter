@@ -48,17 +48,9 @@ public class Scheduler {
 							,connection.get("p6Project")
 						);
 
-						P6ServiceResponse response = readActivitiesWrapper.mapActivities(env, 1);
-						LOGGER.log(Level.INFO, "P6 Service Response: " + response.getMsg());
+						readActivitiesWrapper.importP6Data(env, 1);
 
-						// todo: mapRelationships must be after mapActivities; this should probably be refactored a little
-						P6ServiceResponse response_rels = readActivitiesWrapper.mapRelationships();
-						LOGGER.log(Level.INFO, "P6 Service Response_rels: " + response_rels.getMsg());
-
-						P6ServiceResponse response_codes = readActivitiesWrapper.mapActivityCodeAssignments(env);
-						LOGGER.log(Level.INFO, "P6 Service Response_codes: " + response_codes.getMsg());
-					}
-					catch(Exception e) {
+					} catch (Exception e) {
 					  LOGGER.log(Level.SEVERE, "Connection index " + i + " failed");
 					}
 

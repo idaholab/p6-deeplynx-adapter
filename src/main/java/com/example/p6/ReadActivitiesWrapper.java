@@ -2,7 +2,6 @@ package com.example.p6;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -15,11 +14,12 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import javax.xml.ws.BindingProvider;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import org.javatuples.Pair;
 
 import com.primavera.ws.p6.activity.ActivityFieldType;
 import com.primavera.ws.p6.relationship.RelationshipFieldType;
@@ -34,20 +34,45 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 
 	private static final Logger LOGGER = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
-	DeepLynxService dlService;
-	P6ServiceSession session;
 	private final String fileName = "import.json";
 	private final String relsFileName = "import_rels.json";
 	private final String codesAssignmentsFileName = "import_code_assignments.json";
-	int projectObjectId;
 
-	public P6ServiceResponse mapActivities(Environment env, int databaseInstance) {
-		dlService = new DeepLynxService(env);
-		P6ServiceResponse response = new P6ServiceResponse();
+	public void importP6Data(Environment env, int databaseInstance){
+		DeepLynxService deeplynx = new DeepLynxService(env);
+		deeplynx.authenticate();
 
-		dlService.authenticate();
+		P6ServiceSession session = new P6ServiceSession(env.getUserName(), env.getPassword(), databaseInstance, env.getP6URL());
+		try {
+			String p6url = env.getP6URL() + "AuthenticationService?wsdl";
 
-		session = new P6ServiceSession(env.getUserName(), env.getPassword(), databaseInstance, env.getP6URL());
+			AuthenticationService auth = new AuthenticationService(new URL(p6url));
+			AuthenticationServicePortType servicePort = auth.getAuthenticationServiceSOAP12PortHttp();
+			session.setUserNameToken((BindingProvider) servicePort);
+			servicePort.login(env.getUserName(), env.getPassword(), databaseInstance);
+		} catch (MalformedURLException e) {
+			System.out.println("MalformedURLException. StackTrace: ");
+			e.printStackTrace();
+			LOGGER.log(Level.SEVERE, e.toString(), e);
+		} catch (IntegrationFault e) {
+			System.out.println("IntegrationFault. StackTrace: ");
+			e.printStackTrace();
+			LOGGER.log(Level.SEVERE, e.toString(), e);
+		} catch (Exception e) {
+			LOGGER.log(Level.INFO, "AuthenticationService failed with p6url " + env.getP6URL() + " and username " + env.getUserName(), e);
+		}
+
+		Pair<P6ServiceResponse, Integer> response = mapActivities(session, deeplynx, env);
+		LOGGER.log(Level.INFO, "P6 Service Response: " + response.getValue0().getMsg());
+
+		P6ServiceResponse response_rels = mapRelationships(session, deeplynx, env, response.getValue1());
+		LOGGER.log(Level.INFO, "P6 Service Response_rels: " + response_rels.getMsg());
+
+		P6ServiceResponse response_codes = mapActivityCodeAssignments(session, deeplynx, env);
+		LOGGER.log(Level.INFO, "P6 Service Response_codes: " + response_codes.getMsg());
+	}
+
+	private Pair<P6ServiceResponse, Integer> mapActivities(P6ServiceSession session, DeepLynxService dlService, Environment env) {
 		List<ActivityFieldType> fields = new ArrayList<ActivityFieldType>();
 
 		// Must specify which fields you desire to retrieve
@@ -76,32 +101,13 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		fields.add(ActivityFieldType.CREATE_USER);
 		fields.add(ActivityFieldType.DATA_DATE);
 
-		try {
-			String p6url = env.getP6URL() + "AuthenticationService?wsdl";
-
-			AuthenticationService service = new AuthenticationService(new URL(p6url));
-			AuthenticationServicePortType servicePort = service.getAuthenticationServiceSOAP12PortHttp();
-			session.setUserNameToken((BindingProvider) servicePort);
-			servicePort.login(env.getUserName(), env.getPassword(), databaseInstance);
-		} catch (MalformedURLException e) {
-			System.out.println("MalformedURLException. StackTrace: ");
-			e.printStackTrace();
-			LOGGER.log(Level.SEVERE, e.toString(), e);
-		} catch (IntegrationFault e) {
-			System.out.println("IntegrationFault. StackTrace: ");
-			e.printStackTrace();
-			LOGGER.log(Level.SEVERE, e.toString(), e);
-		} catch (Exception e) {
-			LOGGER.log(Level.INFO, "AuthenticationService failed with p6url " + env.getP6URL() + " and username " + env.getUserName(), e);
-		}
-
 		JSONArray activityList = new JSONArray();
 		List<String> activityIDList = new ArrayList<String>();
-
+		Integer projectObjectId = null;
 		for (com.primavera.ws.p6.activity.Activity act : getActivities(session, env.getProjectID(), fields)) {
 			// need the projectObjectId to filter with in ActivitiesWrapper.getRelationships
-			// todo: this saves the last projectObjectId; only works since all the projectObjectId's are the same
-			projectObjectId = act.getProjectObjectId();
+			// this saves the last projectObjectId; works since all the projectObjectId's are the same
+			projectObjectId = Integer.valueOf(act.getProjectObjectId());
 			String activityId = act.getId();
 
 			JSONObject activity = new JSONObject();
@@ -131,6 +137,7 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		dlService.createManualImport(importFile);
 
 		// Check for errors and create response.
+		P6ServiceResponse response = new P6ServiceResponse();
 		boolean failure = false, warning = false;
 		StringBuffer msg = new StringBuffer("");
 
@@ -157,17 +164,12 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 
 		dlService.deleteNodes(activityIDList);
 
-		return response;
+		// return new Pair<P6ServiceResponse, Integer>(response, projectObjectId);
+		return Pair.with(response, projectObjectId);
 	}
 
-	// todo: mapRelationships must be called after mapActivities so that it can use
-	// the same DL service and P6 session; not ideal but better than keeping them
-	// totally independent and repeating services
-	public P6ServiceResponse mapRelationships() {
-		P6ServiceResponse response = new P6ServiceResponse();
-
+	private P6ServiceResponse mapRelationships(P6ServiceSession session, DeepLynxService dlService, Environment env, int projectObjectId) {
 		List<RelationshipFieldType> fields = new ArrayList<RelationshipFieldType>();
-		// Must specify which fields you desire to retrieve
 		fields.add(RelationshipFieldType.PREDECESSOR_ACTIVITY_ID);
 		fields.add(RelationshipFieldType.PREDECESSOR_PROJECT_ID);
 		fields.add(RelationshipFieldType.SUCCESSOR_ACTIVITY_ID);
@@ -191,6 +193,7 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		dlService.createManualImport(importFile);
 
 		// Check for errors and create response.
+		P6ServiceResponse response = new P6ServiceResponse();
 		boolean failure = false, warning = false;
 		StringBuffer msg = new StringBuffer("");
 
@@ -218,9 +221,7 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		return response;
 	}
 
-	public P6ServiceResponse mapActivityCodeAssignments(Environment env) {
-		P6ServiceResponse response = new P6ServiceResponse();
-
+	public P6ServiceResponse mapActivityCodeAssignments(P6ServiceSession session, DeepLynxService dlService, Environment env) {
 		List<ActivityCodeAssignmentFieldType> fields = new ArrayList<ActivityCodeAssignmentFieldType>();
 		fields.add(ActivityCodeAssignmentFieldType.ACTIVITY_CODE_DESCRIPTION);
 		fields.add(ActivityCodeAssignmentFieldType.ACTIVITY_CODE_TYPE_NAME);
@@ -252,6 +253,7 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		dlService.createManualImport(importFile);
 
 		// Check for errors and create response.
+		P6ServiceResponse response = new P6ServiceResponse();
 		boolean failure = false, warning = false;
 		StringBuffer msg = new StringBuffer("");
 
