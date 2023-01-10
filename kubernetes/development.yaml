@@ -4,7 +4,6 @@ data:
   P6_ADAPTER_PORT: "8080"
   P6_HOSTNAME: p6-dev-mw
   P6_IP_ADDRESS: 10.53.2.252
-  P6_EXECUTION_INTERVAL: "15000"
   P6_DB_LOC: "jdbc:sqlite:/var/app/sqlite/p6.db"
 kind: ConfigMap
 metadata:
