@@ -43,8 +43,8 @@ public class ActivitiesWrapper {
         try {
             wsdlURL = new URL(url);
         } catch (MalformedURLException e) {
-            e.printStackTrace();
             addError(P6ServiceMessage.MessageType.APPLICATION, "Error creating URL for ActivityService.  URL: " + url + " \nMalformedURLException thrown: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, "getActivities wsdlURL failed: " + e.toString());
         } catch(Exception e) {
             LOGGER.log(Level.SEVERE, "getActivities wsdlURL failed: " + e.toString());
         }
@@ -73,8 +73,8 @@ public class ActivitiesWrapper {
         try {
             wsdlURL = new URL(url);
         } catch (MalformedURLException e) {
-            e.printStackTrace();
             addError(P6ServiceMessage.MessageType.APPLICATION, "Error creating URL for RelationshipService.  URL: " + url + " \nMalformedURLException thrown: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, "getRelationships wsdlURL failed: " + e.toString());
         } catch(Exception e) {
             LOGGER.log(Level.SEVERE, "getRelationships wsdlURL failed: " + e.toString());
         }
@@ -103,8 +103,8 @@ public class ActivitiesWrapper {
           try {
               wsdlURL = new URL(url);
           } catch (MalformedURLException e) {
-              e.printStackTrace();
               addError(P6ServiceMessage.MessageType.APPLICATION, "Error creating URL for ActivityCodeService.  URL: " + url + " \nMalformedURLException thrown: " + e.getMessage());
+              LOGGER.log(Level.SEVERE, "getActivityCodes wsdlURL failed: " + e.toString());
           } catch(Exception e) {
               LOGGER.log(Level.SEVERE, "getActivityCodes wsdlURL failed: " + e.toString());
           }
@@ -136,8 +136,8 @@ public class ActivitiesWrapper {
         try {
             wsdlURL = new URL(url);
         } catch (MalformedURLException e) {
-            e.printStackTrace();
             addError(P6ServiceMessage.MessageType.APPLICATION, "Error creating URL for ActivityService.  URL: " + url + " \nMalformedURLException thrown: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, "getActivityCodeAssignments wsdlURL failed: " + e.toString());
         } catch(Exception e) {
             LOGGER.log(Level.SEVERE, "getActivityCodeAssignments wsdlURL failed: " + e.toString());
         }

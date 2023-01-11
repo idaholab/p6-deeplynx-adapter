@@ -68,14 +68,18 @@ public class DeepLynxService {
 	}
 
 	public void createManualImport(File importFile) {
-		String path = env.getDeepLynxURL() + "/containers/" + this.containerID + "/import/datasources/" + this.dataSourceID + "/imports";
-		JSONObject obj = this.makeHTTPFileRequest(path, importFile);
-		boolean isError = obj.getBoolean("isError");
-		if (isError) {
-			LOGGER.log(Level.SEVERE, "Error with manual import call");
-		} else {
-			LOGGER.log(Level.INFO, "Successful manual import to Deep Lynx");
-		}
+		try {
+				String path = env.getDeepLynxURL() + "/containers/" + this.containerID + "/import/datasources/" + this.dataSourceID + "/imports";
+				JSONObject obj = this.makeHTTPFileRequest(path, importFile);
+				boolean isError = obj.getBoolean("isError");
+				if (isError) {
+					LOGGER.log(Level.SEVERE, "Error with manual import call");
+				} else {
+					LOGGER.log(Level.INFO, "Successful manual import to Deep Lynx");
+				}
+			} catch(Exception e) {
+					LOGGER.log(Level.SEVERE, "createManualImport failed: " + e.toString());
+			}
 	}
 
 	public void deleteNodes(List<String> p6Ids) {
@@ -84,23 +88,32 @@ public class DeepLynxService {
 		// todo: now this code is typemapping dependent..
 		String body = "{\"query\":\"{\\r\\n    metatypes{\\r\\n        Activity(\\r\\n            ProjectId: {operator: \\\"eq\\\", value :\\\"" + this.projectID + "\\\"}\\r\\n            _record: {data_source_id: {operator: \\\"eq\\\", value:\\\"" + this.dataSourceID + "\\\"}}\\r\\n        ) {\\r\\n            Id\\r\\n            _deep_lynx_id\\r\\n        }\\r\\n    }\\r\\n}\\r\\n\",\"variables\":{}}";
 		JSONObject queryObj = this.makeHTTPRequest(urlQuery, "POST", body, null);
-		JSONArray queryData = queryObj.getJSONObject("data").getJSONObject("metatypes").getJSONArray("Activity");
-		// process
-		String activityIdDL;
-		List<String> nodesToDelete = new ArrayList<String>();
-		for (int i = 0; i < queryData.length(); i++) {
-			activityIdDL = queryData.getJSONObject(i).getString("Id");
-			// check if activity Id is in DL that is no longer in P6
-			if (!p6Ids.contains(activityIdDL)) {
-				nodesToDelete.add(queryData.getJSONObject(i).getString("_deep_lynx_id"));
-			}
+		try {
+				JSONArray queryData = queryObj.getJSONObject("data").getJSONObject("metatypes").getJSONArray("Activity");
+				// process
+				String activityIdDL;
+				List<String> nodesToDelete = new ArrayList<String>();
+				for (int i = 0; i < queryData.length(); i++) {
+					activityIdDL = queryData.getJSONObject(i).getString("Id");
+					// check if activity Id is in DL that is no longer in P6
+					if (!p6Ids.contains(activityIdDL)) {
+						nodesToDelete.add(queryData.getJSONObject(i).getString("_deep_lynx_id"));
+					}
+				}
+				// delete
+				String urlDelete;
+				 for (String nodeId : nodesToDelete) {
+					 try {
+						 	 LOGGER.log(Level.INFO, "deleteNodes will delete DL nodeId: " + nodeId);
+							 urlDelete = env.getDeepLynxURL() + "/containers/" + this.containerID + "/graphs/nodes/" + nodeId;
+							 this.makeHTTPRequest(urlDelete, "DELETE", null, null);
+					 } catch(Exception e) {
+							 LOGGER.log(Level.SEVERE, "deleteNodes failed on DL nodeId: " + nodeId + " with error: " + e.toString());
+					 }
+				 }
+		} catch(Exception e) {
+				LOGGER.log(Level.SEVERE, "deleteNodes failed: " + e.toString());
 		}
-		// delete
-		String urlDelete;
-		 for (String nodeId : nodesToDelete) {
-			 urlDelete = env.getDeepLynxURL() + "/containers/" + this.containerID + "/graphs/nodes/" + nodeId;
-			 this.makeHTTPRequest(urlDelete, "DELETE", null, null);
-		 }
 	}
 
 	public JSONObject makeHTTPRequest(String path, String method, String body, HashMap<String, String> headers) {
@@ -158,11 +171,11 @@ public class DeepLynxService {
 			return obj;
 
 		} catch (MalformedURLException e) {
-			e.printStackTrace();
-			LOGGER.log(Level.SEVERE, e.toString(), e);
+			LOGGER.log(Level.SEVERE,"makeHTTPRequest failed: " + e.toString(), e);
 		} catch (IOException e) {
-			e.printStackTrace();
-			LOGGER.log(Level.SEVERE, e.toString(), e);
+			LOGGER.log(Level.SEVERE,"makeHTTPRequest failed: " + e.toString(), e);
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE,"makeHTTPRequest failed: " + e.toString(), e);
 		}
 		return null;
 	}
@@ -208,11 +221,11 @@ public class DeepLynxService {
 			return returnContent;
 
 		} catch (MalformedURLException e) {
-			e.printStackTrace();
-			LOGGER.log(Level.SEVERE, e.toString(), e);
+			LOGGER.log(Level.SEVERE,"makeGETRequest failed: " + e.toString(), e);
 		} catch (IOException e) {
-			e.printStackTrace();
-			LOGGER.log(Level.SEVERE, e.toString(), e);
+			LOGGER.log(Level.SEVERE,"makeGETRequest failed: " + e.toString(), e);
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE,"makeGETRequest failed: " + e.toString(), e);
 		}
 		return null;
 	}
@@ -276,11 +289,11 @@ public class DeepLynxService {
 			return obj;
 
 		} catch (MalformedURLException e) {
-			e.printStackTrace();
-			LOGGER.log(Level.SEVERE, e.toString(), e);
+			LOGGER.log(Level.SEVERE,"makeHTTPFileRequest failed: " + e.toString(), e);
 		} catch (IOException e) {
-			e.printStackTrace();
-			LOGGER.log(Level.SEVERE, e.toString(), e);
+			LOGGER.log(Level.SEVERE,"makeHTTPFileRequest failed: " + e.toString(), e);
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE,"makeHTTPFileRequest failed: " + e.toString(), e);
 		}
 		return null;
 	}

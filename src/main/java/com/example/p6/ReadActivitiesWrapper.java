@@ -34,9 +34,9 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 
 	private static final Logger LOGGER = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
-	private final String fileName = "import.json";
-	private final String relsFileName = "import_rels.json";
-	private final String codesAssignmentsFileName = "import_code_assignments.json";
+	private final String fileName = "/var/app/sqlite/import.json";
+	private final String relsFileName = "/var/app/sqlite/import_rels.json";
+	private final String codesAssignmentsFileName = "/var/app/sqlite/import_code_assignments.json";
 
 	public void importP6Data(Environment env, int databaseInstance){
 		DeepLynxService deeplynx = new DeepLynxService(env);
@@ -51,15 +51,11 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 			session.setUserNameToken((BindingProvider) servicePort);
 			servicePort.login(env.getUserName(), env.getPassword(), databaseInstance);
 		} catch (MalformedURLException e) {
-			System.out.println("MalformedURLException. StackTrace: ");
-			e.printStackTrace();
-			LOGGER.log(Level.SEVERE, e.toString(), e);
+			LOGGER.log(Level.SEVERE, "P6 AuthenticationService failed with p6url " + env.getP6URL() + " and username " + env.getUserName(), e);
 		} catch (IntegrationFault e) {
-			System.out.println("IntegrationFault. StackTrace: ");
-			e.printStackTrace();
-			LOGGER.log(Level.SEVERE, e.toString(), e);
+			LOGGER.log(Level.SEVERE, "P6 AuthenticationService failed with p6url " + env.getP6URL() + " and username " + env.getUserName(), e);
 		} catch (Exception e) {
-			LOGGER.log(Level.INFO, "AuthenticationService failed with p6url " + env.getP6URL() + " and username " + env.getUserName(), e);
+			LOGGER.log(Level.SEVERE, "P6 AuthenticationService failed with p6url " + env.getP6URL() + " and username " + env.getUserName(), e);
 		}
 
 		Pair<P6ServiceResponse, Integer> response = mapActivities(session, deeplynx, env);
@@ -289,8 +285,9 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 			LOGGER.log(Level.INFO, "File successfully written");
 
 		} catch (IOException e) {
-			e.printStackTrace();
-			LOGGER.log(Level.SEVERE, e.toString(), e);
+			LOGGER.log(Level.SEVERE,"writeJSONFile failed: " + e.toString(), e);
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE,"writeJSONFile failed: " + e.toString(), e);
 		}
 	}
 
@@ -320,7 +317,9 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
                 calendar.setTime(sdf.parse(dateString));
             }
         } catch (ParseException e) {
-             e.printStackTrace();
+						LOGGER.log(Level.SEVERE,"translateDate failed: " + e.toString(), e);
+        } catch (Exception e) {
+						LOGGER.log(Level.SEVERE,"translateDate failed: " + e.toString(), e);
         }
         return calendar.getTime();
     }
