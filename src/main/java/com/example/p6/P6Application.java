@@ -21,6 +21,8 @@ public class P6Application {
 			P6Logger.setup();
 		} catch (IOException e) {
 			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 		SpringApplication.run(Scheduler.class, args);
 	}

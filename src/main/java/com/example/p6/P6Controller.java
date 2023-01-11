@@ -112,10 +112,10 @@ public class P6Controller {
 			conn.disconnect();
 			return status;
 		} catch (UnknownHostException e) {
-			LOGGER.log(Level.SEVERE, e.toString(), e);
+			LOGGER.log(Level.SEVERE,"p6Status failed: " + e.toString(), e);
 			return "Unknown Host";
 		} catch (Exception e) {
-			LOGGER.log(Level.SEVERE, e.toString(), e);
+			LOGGER.log(Level.SEVERE,"p6Status failed: " + e.toString(), e);
 			return e.toString();
 		}
 	}
@@ -140,7 +140,7 @@ public class P6Controller {
 				status_map.put("configuration_success", "true");
 			}
 			status_map.put("rows_affected", String.valueOf(rows_affected));
-			
+
 			sqlconnect.close();
 		}
 
@@ -219,7 +219,7 @@ public class P6Controller {
 		} catch (Exception e) {
 			LOGGER.log(Level.SEVERE, e.toString());
 		}
-		
+
 
 		return status_map;
 	}
@@ -248,4 +248,3 @@ public class P6Controller {
 		return status_map;
 	}
 }
-

@@ -33,6 +33,8 @@ public class SoapHeaderHandler extends SoapHeaderOutFilterInterceptor {
             docBuilder = dbfac.newDocumentBuilder();
         } catch (ParserConfigurationException e) {
             e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         Document respDoc = docBuilder.newDocument();
