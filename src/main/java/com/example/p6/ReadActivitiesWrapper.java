@@ -105,6 +105,7 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 			// this saves the last projectObjectId; works since all the projectObjectId's are the same
 			projectObjectId = Integer.valueOf(act.getProjectObjectId());
 			String activityId = act.getId();
+			activityIDList.add(activityId);
 			JSONObject activity = new JSONObject();
 
 			// when a new activity is created in P6, default data gets generated automatically for the following fields (and possibly others)
@@ -128,7 +129,6 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 			activity.put("ActualFinishDate", act.getActualFinishDate().getValue() == null ? "" : act.getActualFinishDate().getValue());
 
 			activityList.put(activity);
-			activityIDList.add(activityId);
 		}
 
 		// write json to file and import
@@ -162,7 +162,7 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 
 		response.setMsg(msg.toString());
 
-		dlService.deleteNodes(activityIDList);
+		dlService.deleteNodes(activityIDList, "Activity", "Id");
 
 		return Pair.with(response, projectObjectId);
 	}
@@ -232,8 +232,13 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		fields.add(ActivityCodeAssignmentFieldType.LAST_UPDATE_DATE);
 
 		JSONArray activityCodeAssignmentList = new JSONArray();
-
+		List<String> activityCodeIDList = new ArrayList<String>();
 		for (ActivityCodeAssignment code : getActivityCodeAssignments(session, env.getProjectID(), fields)) {
+			// P6 doesn't give unique activity code assignment ids, but a given activity code can only be assigned to a given activty once
+			// unique id for DL typemapping
+			String activityCodeAssignmentId = code.getActivityId() + code.getActivityCodeObjectId();
+			activityCodeIDList.add(activityCodeAssignmentId);
+
 			JSONObject activityCodeAssignment = new JSONObject();
 			activityCodeAssignment.put("ActivityCodeDescription", code.getActivityCodeDescription());
 			activityCodeAssignment.put("ActivityCodeTypeName", code.getActivityCodeTypeName());
@@ -242,9 +247,10 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 			activityCodeAssignment.put("ActivityName", code.getActivityName());
 			activityCodeAssignment.put("ProjectId", code.getProjectId());
 			activityCodeAssignment.put("ActivityCodeObjectId", code.getActivityCodeObjectId());
+			activityCodeAssignment.put("ActivityCodeAssignmentId", activityCodeAssignmentId);
 			activityCodeAssignment.put("LastUpdateDate", this.translateDate(code.getLastUpdateDate().getValue()));
-			activityCodeAssignmentList.put(activityCodeAssignment);
 
+			activityCodeAssignmentList.put(activityCodeAssignment);
 		}
 
 		this.writeJSONFile(activityCodeAssignmentList, codesAssignmentsFileName);
@@ -276,6 +282,8 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		}
 
 		response.setMsg(msg.toString());
+
+		dlService.deleteNodes(activityCodeIDList, "ActivityCode", "ActivityCodeAssignmentId");
 
 		return response;
 	}
