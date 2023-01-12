@@ -105,8 +105,9 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 			// this saves the last projectObjectId; works since all the projectObjectId's are the same
 			projectObjectId = Integer.valueOf(act.getProjectObjectId());
 			String activityId = act.getId();
-
 			JSONObject activity = new JSONObject();
+
+			// when a new activity is created in P6, default data gets generated automatically for the following fields (and possibly others)
 			activity.put("Id", activityId);
 			activity.put("ProjectId", act.getProjectId());
 			activity.put("WBSCode", act.getWBSCode());
@@ -116,13 +117,16 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 			activity.put("CompletionStatus", act.getStatus());
 			activity.put("ProjectedStartDate", this.translateDate(act.getStartDate()));
 			activity.put("ProjectedFinishDate", this.translateDate(act.getFinishDate()));
-			activity.put("ActualStartDate", act.getActualStartDate().getValue());
-			activity.put("ActualFinishDate", act.getActualFinishDate().getValue());
 			activity.put("PlannedDuration", act.getPlannedDuration());
 			activity.put("ActualDuration", act.getActualDuration().getValue());
 			activity.put("RemainingDuration", act.getRemainingDuration().getValue());
 			activity.put("CompletedDuration", act.getAtCompletionDuration());
 			activity.put("LastUpdateDate", this.translateDate(act.getLastUpdateDate().getValue()));
+
+			// data is NOT generated automatically for these fields, so empty strings will simplify typemapping in DL
+			activity.put("ActualStartDate", act.getActualStartDate().getValue() == null ? "" : act.getActualStartDate().getValue());
+			activity.put("ActualFinishDate", act.getActualFinishDate().getValue() == null ? "" : act.getActualFinishDate().getValue());
+
 			activityList.put(activity);
 			activityIDList.add(activityId);
 		}
@@ -160,7 +164,6 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 
 		dlService.deleteNodes(activityIDList);
 
-		// return new Pair<P6ServiceResponse, Integer>(response, projectObjectId);
 		return Pair.with(response, projectObjectId);
 	}
 
