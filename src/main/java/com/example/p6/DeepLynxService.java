@@ -82,11 +82,12 @@ public class DeepLynxService {
 			}
 	}
 
-	public void deleteNodes(List<String> p6Ids) {
+	public void deleteNodes(List<String> p6Ids, String metatype, String nodeIdName) {
 		// query
 		String urlQuery = env.getDeepLynxURL() + "/containers/" + this.containerID + "/data";
 		// todo: now this code is typemapping dependent..
-		String body = "{\"query\":\"{\\r\\n    metatypes{\\r\\n        Activity(\\r\\n            ProjectId: {operator: \\\"eq\\\", value :\\\"" + this.projectID + "\\\"}\\r\\n            _record: {data_source_id: {operator: \\\"eq\\\", value:\\\"" + this.dataSourceID + "\\\"}}\\r\\n        ) {\\r\\n            Id\\r\\n            _deep_lynx_id\\r\\n        }\\r\\n    }\\r\\n}\\r\\n\",\"variables\":{}}";
+		// adding params for the two typemapping variables makes this slightly better, still need to discuss
+		String body = "{\"query\":\"{\\r\\n    metatypes{\\r\\n        " + metatype + "(\\r\\n            ProjectId: {operator: \\\"eq\\\", value :\\\"" + this.projectID + "\\\"}\\r\\n            _record: {data_source_id: {operator: \\\"eq\\\", value:\\\"" + this.dataSourceID + "\\\"}}\\r\\n        ) {\\r\\n            " + nodeIdName + "\\r\\n            _deep_lynx_id\\r\\n        }\\r\\n    }\\r\\n}\\r\\n\",\"variables\":{}}";
 		JSONObject queryObj = this.makeHTTPRequest(urlQuery, "POST", body, null);
 		try {
 				JSONArray queryData = queryObj.getJSONObject("data").getJSONObject("metatypes").getJSONArray("Activity");
