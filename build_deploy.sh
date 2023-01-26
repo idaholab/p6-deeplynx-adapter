@@ -12,4 +12,4 @@ dzdo podman container rm p6;
 dzdo podman build -f Dockerfile-dev -t p6adapter:latest --no-cache;
 
 # run
-dzdo podman run -p 8080:80 --name=p6 -v ./sqlite:/var/app/sqlite --env-file=.env p6adapter:latest;
+dzdo podman run -p 80:8080 --name=p6 -v ./sqlite:/var/app/sqlite --env-file=.env p6adapter:latest;
