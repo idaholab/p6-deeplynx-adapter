@@ -22,7 +22,7 @@ public class Scheduler {
 
 	// @Scheduled(fixedRate = Scheduler.interval)
 	// @Scheduled(fixedRate = 3600000)
-	@Scheduled(fixedRate = 60000)
+	@Scheduled(fixedRate = 120000)
 	public void adapterLoop() {
 		System.out.println("tick");
 		try {
