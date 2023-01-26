@@ -2,6 +2,7 @@ FROM maven:3.8.6-ibmjava-8
 
 RUN mkdir /var/app
 RUN mkdir /var/app/lib
+RUN mkdir /var/app/sqlite
 
 WORKDIR /var/app
 
