@@ -222,7 +222,6 @@ public class DeepLynxService {
 			in.close();
 			con.disconnect();
 
-			LOGGER.log(Level.INFO, content.toString());
 			return content.toString();
 
 		} catch (MalformedURLException e) {
