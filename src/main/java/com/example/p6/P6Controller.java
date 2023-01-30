@@ -80,18 +80,18 @@ public class P6Controller {
     * Logs query
     */
 	@GetMapping("/logs")
-	public HashMap<String, String> logs() throws IOException {
-		HashMap<String, String> log_map = new HashMap<String, String>();
+	public HashMap<Integer, String> logs() throws IOException {
+		HashMap<Integer, String> log_map = new HashMap<Integer, String>();
 
 		LOGGER.log(Level.INFO, "GET | /logs");
 
 		try (BufferedReader br = new BufferedReader(new FileReader("/var/app/sqlite/Log.txt"))) {
 			String line;
 
-			int count = 0;
+			Integer count = 0;
 
 			while ((line = br.readLine()) != null) {
-				log_map.put(String.valueOf(count), line);
+				log_map.put(count, line);
 				count += 1;
 			}
 			br.close();
