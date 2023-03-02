@@ -6,6 +6,18 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.view.RedirectView;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.RestTemplate;
+
+import org.json.*;
 
 // TODO: remove when moving to prod
 import org.apache.commons.io.FileUtils;
@@ -19,10 +31,12 @@ import java.net.UnknownHostException;
 import java.net.URL;
 import java.net.HttpURLConnection;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Base64;
 
 @RestController
 public class P6Controller {
@@ -246,5 +260,59 @@ public class P6Controller {
 		}
 
 		return status_map;
+	}
+
+	@GetMapping("/redirect")
+	public RedirectView redirect() {
+			// TODO: where does this get set during deployment?
+			String appAddress = "http://localhost:8080";
+			// TODO: do I need to do that if/else check that Brennan did in the javascript script?
+			// if ( !$page.url.searchParams.has("token"))
+			String authAddress = String.format("%s/oauth/authorize?response_type=code&client_id=%s&redirect_uri=%s&state=p6_adapter&scope=all",
+					System.getenv("DL_URL"), System.getenv("DL_APP_ID"), appAddress + "/exchange");
+			return new RedirectView(authAddress);
+	}
+
+	@GetMapping("/exchange")
+	// TODO: should I do anything with state? can add @PathParam to get state variable
+	// TODO: Maybe this doesn't need to return anything, or maybe some type of confirmation message?
+	public void exchangeToken(@RequestParam String token) {
+	// public ResponseEntity<String> exchangeToken(@RequestParam String token) {
+			// exchange the temporary token for an access token
+			String url = System.getenv("DL_URL") + "/oauth/exchange";
+			String appAddress = "http://localhost:8080";
+			String requestBody = "{"
+															+ "\"client_id\": \"" + System.getenv("DL_APP_ID") + "\","
+															+ "\"code\": \"" + token + "\","
+															+ "\"grant_type\": \"authorization_code\","
+															+ "\"redirect_uri\": \"" + appAddress + "/exchange\","
+															+ "\"client_secret\": \"" + System.getenv("DL_APP_SECRET") + "\","
+															+ "\"state\": \"p6_adapter\""
+													+ "}";
+
+			HttpHeaders headers = new HttpHeaders();
+      headers.add(HttpHeaders.CONTENT_TYPE, "application/json");
+			HttpEntity<String> request = new HttpEntity<>(requestBody, headers);
+			RestTemplate restTemplate = new RestTemplate();
+			try {
+					ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+					if (response.getStatusCode() == HttpStatus.OK) {
+							JSONObject jsonObject = new JSONObject(response.getBody());
+							// TODO: pretty sure this token expires in 12hrs and the adapter runs every 24hrs..
+							// TODO: use long_token to create service user and then create service user key pair and store that in P6 db
+							String long_token = jsonObject.getString("value");
+							System.out.println(long_token);
+
+							// return ResponseEntity.ok().body(response.getBody());
+					} else {
+							throw new Exception("Error: " + response.getStatusCodeValue() + " - " + response.getBody());
+					}
+			} catch (HttpStatusCodeException e) {
+					LOGGER.log(Level.SEVERE,"exchange failed: " + e.getResponseBodyAsString(), e);
+					// return ResponseEntity.status(e.getRawStatusCode()).body(e.getResponseBodyAsString());
+			} catch (Exception e) {
+					LOGGER.log(Level.SEVERE,"exchange failed: " + e.getMessage(), e);
+					// return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
+			}
 	}
 }
