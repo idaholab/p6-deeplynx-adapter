@@ -11,6 +11,7 @@ import org.springframework.web.servlet.view.RedirectView;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,6 +33,8 @@ import java.net.URL;
 import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Arrays;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.logging.Level;
@@ -88,6 +91,26 @@ public class P6Controller {
 		}
 
 		return status_map;
+	}
+
+	@GetMapping("/view_db")
+	public HashMap<String, String> view_db() {
+		HashMap<String, String> view_map = new HashMap<String, String>();
+		// get status for each unique p6URL from configuration stored in p6.db
+		SQLConnect sqlconnect = new SQLConnect();
+		if (sqlconnect.connect()) {
+			ArrayList<HashMap<String, String>> connections = sqlconnect.getConnections();
+			// loop over connections
+			for (int i = 0; i < connections.size(); i++) {
+				HashMap<String, String> connection = connections.get(i);
+				view_map.put(connection.get("serviceUserKey"), connection.get("serviceUserSecret"));
+			}
+			sqlconnect.close();
+		} else {
+			LOGGER.log(Level.INFO, "Cannot connect to DB");
+		}
+
+		return view_map;
 	}
 
 	/**
@@ -164,53 +187,53 @@ public class P6Controller {
 	/**
     * Update an entry in the connections table
     */
-	@PutMapping("/update")
-	public HashMap<String, String> update(@RequestBody HashMap<String, String> payload) {
-
-		HashMap<String, String> status_map = new HashMap<String, String>();
-
-		SQLConnect sqlconnect = new SQLConnect();
-		status_map.put("update_success", "false");
-
-		LOGGER.log(Level.INFO, "POST | /update");
-
-		if (sqlconnect.connect()) {
-			int rows_affected = sqlconnect.updateConnection(payload);
-			if (rows_affected > 0) {
-				status_map.put("update_success", "true");
-			}
-			status_map.put("rows_affected", String.valueOf(rows_affected));
-			sqlconnect.close();
-		}
-
-		return status_map;
-	}
+	// @PutMapping("/update")
+	// public HashMap<String, String> update(@RequestBody HashMap<String, String> payload) {
+	//
+	// 	HashMap<String, String> status_map = new HashMap<String, String>();
+	//
+	// 	SQLConnect sqlconnect = new SQLConnect();
+	// 	status_map.put("update_success", "false");
+	//
+	// 	LOGGER.log(Level.INFO, "POST | /update");
+	//
+	// 	if (sqlconnect.connect()) {
+	// 		int rows_affected = sqlconnect.updateConnection(payload);
+	// 		if (rows_affected > 0) {
+	// 			status_map.put("update_success", "true");
+	// 		}
+	// 		status_map.put("rows_affected", String.valueOf(rows_affected));
+	// 		sqlconnect.close();
+	// 	}
+	//
+	// 	return status_map;
+	// }
 
 	/**
     * Delete an entry in the connections table
     */
-	@DeleteMapping("/delete")
-	public HashMap<String, String> delete(@RequestBody HashMap<String, String> payload) {
-
-		HashMap<String, String> status_map = new HashMap<String, String>();
-
-		SQLConnect sqlconnect = new SQLConnect();
-		status_map.put("delete_success", "false");
-
-		LOGGER.log(Level.INFO, "POST | /delete");
-
-		if (sqlconnect.connect()) {
-			int rows_affected = sqlconnect.deleteConnection(payload);
-			if (rows_affected > 0) {
-				status_map.put("delete_success", "true");
-			}
-			status_map.put("rows_affected", String.valueOf(rows_affected));
-
-			sqlconnect.close();
-		}
-
-		return status_map;
-	}
+	// @DeleteMapping("/delete")
+	// public HashMap<String, String> delete(@RequestBody HashMap<String, String> payload) {
+	//
+	// 	HashMap<String, String> status_map = new HashMap<String, String>();
+	//
+	// 	SQLConnect sqlconnect = new SQLConnect();
+	// 	status_map.put("delete_success", "false");
+	//
+	// 	LOGGER.log(Level.INFO, "POST | /delete");
+	//
+	// 	if (sqlconnect.connect()) {
+	// 		int rows_affected = sqlconnect.deleteConnection(payload);
+	// 		if (rows_affected > 0) {
+	// 			status_map.put("delete_success", "true");
+	// 		}
+	// 		status_map.put("rows_affected", String.valueOf(rows_affected));
+	//
+	// 		sqlconnect.close();
+	// 	}
+	//
+	// 	return status_map;
+	// }
 
 	/**
     * Delete static resources
@@ -275,44 +298,163 @@ public class P6Controller {
 
 	@GetMapping("/exchange")
 	// TODO: should I do anything with state? can add @PathParam to get state variable
-	// TODO: Maybe this doesn't need to return anything, or maybe some type of confirmation message?
+	// TODO: Should this return some type of confirmation message?
+	// TODO: should I close the page after this exchange? I think that would require some javascript
 	public void exchangeToken(@RequestParam String token) {
-	// public ResponseEntity<String> exchangeToken(@RequestParam String token) {
 			// exchange the temporary token for an access token
 			String url = System.getenv("DL_URL") + "/oauth/exchange";
 			String appAddress = "http://localhost:8080";
-			String requestBody = "{"
-															+ "\"client_id\": \"" + System.getenv("DL_APP_ID") + "\","
-															+ "\"code\": \"" + token + "\","
-															+ "\"grant_type\": \"authorization_code\","
-															+ "\"redirect_uri\": \"" + appAddress + "/exchange\","
-															+ "\"client_secret\": \"" + System.getenv("DL_APP_SECRET") + "\","
-															+ "\"state\": \"p6_adapter\""
-													+ "}";
+			JSONObject requestBody = new JSONObject();
+			requestBody.put("client_id", System.getenv("DL_APP_ID"));
+			requestBody.put("code", token);
+			requestBody.put("grant_type", "authorization_code");
+			requestBody.put("redirect_uri", appAddress + "/exchange");
+			requestBody.put("client_secret", System.getenv("DL_APP_SECRET"));
+			requestBody.put("state", "p6_adapter");
 
 			HttpHeaders headers = new HttpHeaders();
-      headers.add(HttpHeaders.CONTENT_TYPE, "application/json");
-			HttpEntity<String> request = new HttpEntity<>(requestBody, headers);
+      headers.setContentType(MediaType.APPLICATION_JSON);
+			HttpEntity<String> request = new HttpEntity<>(requestBody.toString(), headers);
 			RestTemplate restTemplate = new RestTemplate();
 			try {
 					ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
 					if (response.getStatusCode() == HttpStatus.OK) {
-							JSONObject jsonObject = new JSONObject(response.getBody());
-							// TODO: pretty sure this token expires in 12hrs and the adapter runs every 24hrs..
-							// TODO: use long_token to create service user and then create service user key pair and store that in P6 db
-							String long_token = jsonObject.getString("value");
-							System.out.println(long_token);
+							JSONObject resObject = new JSONObject(response.getBody());
+							// use long_token to create service user and then create service user key pair and store that in P6 db
+							String long_token = resObject.getString("value");
+							// DL dev
+							// String serviceUserId = createServiceUser(long_token, "102");
+							// createServiceUserKeyPair(long_token, "102", serviceUserId);
+							// DL local
+							String serviceUserId = createServiceUser(long_token, "2");
+							setServiceUserPermissions(long_token, "2", serviceUserId);
+							createServiceUserKeyPair(long_token, "2", serviceUserId);
 
 							// return ResponseEntity.ok().body(response.getBody());
 					} else {
 							throw new Exception("Error: " + response.getStatusCodeValue() + " - " + response.getBody());
 					}
 			} catch (HttpStatusCodeException e) {
+					System.out.println(e.getResponseBodyAsString());
 					LOGGER.log(Level.SEVERE,"exchange failed: " + e.getResponseBodyAsString(), e);
 					// return ResponseEntity.status(e.getRawStatusCode()).body(e.getResponseBodyAsString());
 			} catch (Exception e) {
+					System.out.println(e.getMessage());
 					LOGGER.log(Level.SEVERE,"exchange failed: " + e.getMessage(), e);
 					// return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
+			}
+	}
+
+	// TODO: how should I get the containerId?
+	// TODO: is display_name required and how should I get it?
+	// TODO: I'm guessing I should set the permissions here.. what about roles.. what else?
+	public String createServiceUser(String token, String containerId) {
+			String url = System.getenv("DL_URL") + "/containers/" + containerId + "/service-users";
+
+			JSONObject requestBody = new JSONObject();
+			requestBody.put("display_name", "Jack-test");
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.APPLICATION_JSON);
+			headers.add(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+
+			HttpEntity<String> request = new HttpEntity<>(requestBody.toString(), headers);
+			RestTemplate restTemplate = new RestTemplate();
+			try {
+					ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+					if (response.getStatusCode() == HttpStatus.OK) {
+							JSONObject resObject = new JSONObject(response.getBody());
+							String serviceUserId = resObject.getJSONObject("value").getString("id");
+							// System.out.println(serviceUserId);
+							return serviceUserId;
+					} else {
+							throw new Exception("Error: " + response.getStatusCodeValue() + " - " + response.getBody());
+					}
+			} catch (HttpStatusCodeException e) {
+					// System.out.println(e.getResponseBodyAsString());
+					LOGGER.log(Level.SEVERE,"exchange failed: " + e.getResponseBodyAsString(), e);
+					return e.getResponseBodyAsString();
+			} catch (Exception e) {
+					// System.out.println(e.getMessage());
+					LOGGER.log(Level.SEVERE,"exchange failed: " + e.getMessage(), e);
+					return e.getMessage();
+			}
+	}
+
+	public void setServiceUserPermissions(String token, String containerId, String serviceUserId) {
+			String url = System.getenv("DL_URL") + "/containers/" + containerId + "/service-users/" + serviceUserId + "/permissions";
+
+			// Set the request headers
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.APPLICATION_JSON);
+			headers.add(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+
+			// Set the request body
+			Map<String, Object> requestBody = new HashMap<>();
+			List<String> containers = Arrays.asList("read");
+			List<String> ontology = new ArrayList<>();
+			List<String> users = new ArrayList<>();
+			List<String> data = Arrays.asList("read", "write");
+			requestBody.put("containers", containers);
+			requestBody.put("ontology", ontology);
+			requestBody.put("users", users);
+			requestBody.put("data", data);
+
+			// Build the request entity
+			HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
+
+			RestTemplate restTemplate = new RestTemplate();
+			try {
+					// Send the request
+					ResponseEntity<String> response = restTemplate.exchange(
+						url,
+						HttpMethod.PUT,
+						request,
+						String.class
+					);
+					if (response.getStatusCode() != HttpStatus.OK) {
+							throw new Exception("Error: " + response.getStatusCodeValue() + " - " + response.getBody());
+					}
+			} catch (HttpStatusCodeException e) {
+					LOGGER.log(Level.SEVERE,"exchange failed: " + e.getResponseBodyAsString(), e);
+			} catch (Exception e) {
+					LOGGER.log(Level.SEVERE,"exchange failed: " + e.getMessage(), e);
+			}
+	}
+
+	// TODO: should this return something or can I just add the key/secret to the P6 db from here?
+	public void createServiceUserKeyPair(String token, String containerId, String serviceUserId) {
+			String url = System.getenv("DL_URL") + "/containers/" + containerId + "/service-users/" + serviceUserId + "/keys";
+			String requestBody = "";
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.APPLICATION_JSON);
+			headers.add(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+			HttpEntity<String> request = new HttpEntity<>(requestBody, headers);
+			RestTemplate restTemplate = new RestTemplate();
+			try {
+					ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+					if (response.getStatusCode() == HttpStatus.OK) {
+							JSONObject resObject = new JSONObject(response.getBody());
+							String serviceUserKey = resObject.getJSONObject("value").getString("key");
+							String serviceUserSecret = resObject.getJSONObject("value").getString("secret_raw");
+							// System.out.println(serviceUserKey);
+							// System.out.println(serviceUserSecret);
+							HashMap<String, String> newServiceUser = new HashMap<String, String>();
+							newServiceUser.put("serviceUserId", serviceUserId);
+							newServiceUser.put("serviceUserKey", serviceUserKey);
+							newServiceUser.put("serviceUserSecret", serviceUserSecret);
+							this.configure(newServiceUser);
+
+					} else {
+							throw new Exception("Error: " + response.getStatusCodeValue() + " - " + response.getBody());
+					}
+			} catch (HttpStatusCodeException e) {
+					// System.out.println(e.getResponseBodyAsString());
+					LOGGER.log(Level.SEVERE,"exchange failed: " + e.getResponseBodyAsString(), e);
+			} catch (Exception e) {
+					// System.out.println(e.getMessage());
+					LOGGER.log(Level.SEVERE,"exchange failed: " + e.getMessage(), e);
 			}
 	}
 }
