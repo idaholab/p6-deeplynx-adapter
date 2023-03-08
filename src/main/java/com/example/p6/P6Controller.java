@@ -300,7 +300,7 @@ public class P6Controller {
 	// TODO: should I do anything with state? can add @PathParam to get state variable
 	// TODO: Should this return some type of confirmation message?
 	// TODO: should I close the page after this exchange? I think that would require some javascript
-	public void exchangeToken(@RequestParam String token, @PathVariable String containerId) {
+	public String exchangeToken(@RequestParam String token, @PathVariable String containerId) {
 			// exchange the temporary token for an access token
 			String url = System.getenv("DL_URL") + "/oauth/exchange";
 			String appAddress = "http://localhost:8080";
@@ -325,19 +325,18 @@ public class P6Controller {
 							String serviceUserId = createServiceUser(long_token, containerId);
 							setServiceUserPermissions(long_token, containerId, serviceUserId);
 							createServiceUserKeyPair(long_token, containerId, serviceUserId);
-
-							// return ResponseEntity.ok().body(response.getBody());
+							return "P6 adapter has successfully authenticated with Deep Lynx; please close this page.";
 					} else {
 							throw new Exception("Error: " + response.getStatusCodeValue() + " - " + response.getBody());
 					}
 			} catch (HttpStatusCodeException e) {
 					System.out.println(e.getResponseBodyAsString());
 					LOGGER.log(Level.SEVERE,"exchange failed: " + e.getResponseBodyAsString(), e);
-					// return ResponseEntity.status(e.getRawStatusCode()).body(e.getResponseBodyAsString());
+					return e.getResponseBodyAsString();
 			} catch (Exception e) {
 					System.out.println(e.getMessage());
 					LOGGER.log(Level.SEVERE,"exchange failed: " + e.getMessage(), e);
-					// return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
+					return e.getMessage();
 			}
 	}
 
