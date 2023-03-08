@@ -67,7 +67,7 @@ public class P6Controller {
 	/**
 	* Return the status of the connection to the P6 datasource
 	*/
-	// todo: need to change how we add extra_hosts in docker-compose file
+	// TODO: need to change how we add extra_hosts in docker-compose file
 	@GetMapping("/status")
 	public HashMap<String, String> status() {
 		HashMap<String, String> status_map = new HashMap<String, String>();

@@ -96,39 +96,6 @@ public class ActivitiesWrapper {
         return results;
       }
 
-   protected List<com.primavera.ws.p6.activitycode.ActivityCode> getActivityCodes(P6ServiceSession session, int projectObjectID, List<ActivityCodeFieldType> returnParams){
-          String url = session.getP6url() + "ActivityCodeService?wsdl";
-          URL wsdlURL = null;
-
-          try {
-              wsdlURL = new URL(url);
-          } catch (MalformedURLException e) {
-              addError(P6ServiceMessage.MessageType.APPLICATION, "Error creating URL for ActivityCodeService.  URL: " + url + " \nMalformedURLException thrown: " + e.getMessage());
-              LOGGER.log(Level.SEVERE, "getActivityCodes wsdlURL failed: " + e.toString());
-          } catch(Exception e) {
-              LOGGER.log(Level.SEVERE, "getActivityCodes wsdlURL failed: " + e.toString());
-          }
-
-          ActivityCodeService service = new ActivityCodeService(wsdlURL);
-          ActivityCodePortType servicePort = service.getActivityCodePort();
-          session.setUserNameToken((BindingProvider)servicePort);
-
-          List<com.primavera.ws.p6.activitycode.ActivityCode> results = null;
-
-          try {
-              // todo: figure out how to filter on ProjectObjectId
-              // results = servicePort.readActivityCodes(returnParams, null, null);
-              results = servicePort.readActivityCodes(returnParams,"ProjectObjectId='158845'", null);
-              // results = servicePort.readActivityCodes(returnParams,"ProjectObjectId='" + projectObjectID + "'", null);
-          } catch (com.primavera.ws.p6.activitycode.IntegrationFault e) {
-              LOGGER.log(Level.SEVERE, "getActivityCodes failed: " + e.toString());
-          } catch(Exception e) {
-              LOGGER.log(Level.SEVERE, "getActivityCodes failed: " + e.toString());
-          }
-
-          return results;
-      }
-
       public List<ActivityCodeAssignment> getActivityCodeAssignments(P6ServiceSession session, String projectID, List<ActivityCodeAssignmentFieldType> returnParams){
         String url = session.getP6url() + "ActivityCodeAssignmentService?wsdl";
         URL wsdlURL = null;

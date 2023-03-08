@@ -51,7 +51,7 @@ public class DeepLynxService {
 		HashMap<String, String> headers = new HashMap<String, String>();
 		headers.put("x-api-key", env.getApiKey());
 		headers.put("x-api-secret", env.getApiSecret());
-		// todo: rethink hardcoding expiry
+		// TODO: rethink hardcoding expiry
 		headers.put("x-api-expiry", "12h");
 
 		try {
@@ -134,7 +134,7 @@ public class DeepLynxService {
 	public void deleteNodes(List<String> p6Ids, String metatype, String nodeIdName) {
 		// query
 		String urlQuery = env.getDeepLynxURL() + "/containers/" + env.getContainerId() + "/data";
-		// todo: now this code is typemapping dependent..
+		// TODO: now this code is typemapping dependent..
 		// adding params for the two typemapping variables makes this slightly better, still need to discuss
 		String body = "{\"query\":\"{\\r\\n    metatypes{\\r\\n        " + metatype + "(\\r\\n            ProjectId: {operator: \\\"eq\\\", value :\\\"" + env.getProjectID() + "\\\"}\\r\\n            _record: {data_source_id: {operator: \\\"eq\\\", value:\\\"" + env.getDataSourceId() + "\\\"}}\\r\\n        ) {\\r\\n            " + nodeIdName + "\\r\\n            _deep_lynx_id\\r\\n        }\\r\\n    }\\r\\n}\\r\\n\",\"variables\":{}}";
 		JSONObject queryObj = new JSONObject(this.makeHTTPRequest(urlQuery, "POST", body, null));
