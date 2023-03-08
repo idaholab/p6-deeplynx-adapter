@@ -285,22 +285,22 @@ public class P6Controller {
 		return status_map;
 	}
 
-	@GetMapping("/redirect")
-	public RedirectView redirect() {
+	@GetMapping("/redirect/{containerId}")
+	public RedirectView redirect(@PathVariable String containerId) {
 			// TODO: where does this get set during deployment?
 			String appAddress = "http://localhost:8080";
 			// TODO: do I need to do that if/else check that Brennan did in the javascript script?
 			// if ( !$page.url.searchParams.has("token"))
 			String authAddress = String.format("%s/oauth/authorize?response_type=code&client_id=%s&redirect_uri=%s&state=p6_adapter&scope=all",
-					System.getenv("DL_URL"), System.getenv("DL_APP_ID"), appAddress + "/exchange");
+					System.getenv("DL_URL"), System.getenv("DL_APP_ID"), appAddress + "/exchange/" + containerId);
 			return new RedirectView(authAddress);
 	}
 
-	@GetMapping("/exchange")
+	@GetMapping("/exchange/{containerId}")
 	// TODO: should I do anything with state? can add @PathParam to get state variable
 	// TODO: Should this return some type of confirmation message?
 	// TODO: should I close the page after this exchange? I think that would require some javascript
-	public void exchangeToken(@RequestParam String token) {
+	public void exchangeToken(@RequestParam String token, @PathVariable String containerId) {
 			// exchange the temporary token for an access token
 			String url = System.getenv("DL_URL") + "/oauth/exchange";
 			String appAddress = "http://localhost:8080";
@@ -308,7 +308,7 @@ public class P6Controller {
 			requestBody.put("client_id", System.getenv("DL_APP_ID"));
 			requestBody.put("code", token);
 			requestBody.put("grant_type", "authorization_code");
-			requestBody.put("redirect_uri", appAddress + "/exchange");
+			requestBody.put("redirect_uri", appAddress + "/exchange/" + containerId);
 			requestBody.put("client_secret", System.getenv("DL_APP_SECRET"));
 			requestBody.put("state", "p6_adapter");
 
@@ -322,13 +322,9 @@ public class P6Controller {
 							JSONObject resObject = new JSONObject(response.getBody());
 							// use long_token to create service user and then create service user key pair and store that in P6 db
 							String long_token = resObject.getString("value");
-							// DL dev
-							// String serviceUserId = createServiceUser(long_token, "102");
-							// createServiceUserKeyPair(long_token, "102", serviceUserId);
-							// DL local
-							String serviceUserId = createServiceUser(long_token, "2");
-							setServiceUserPermissions(long_token, "2", serviceUserId);
-							createServiceUserKeyPair(long_token, "2", serviceUserId);
+							String serviceUserId = createServiceUser(long_token, containerId);
+							setServiceUserPermissions(long_token, containerId, serviceUserId);
+							createServiceUserKeyPair(long_token, containerId, serviceUserId);
 
 							// return ResponseEntity.ok().body(response.getBody());
 					} else {
@@ -345,7 +341,6 @@ public class P6Controller {
 			}
 	}
 
-	// TODO: how should I get the containerId?
 	// TODO: is display_name required and how should I get it?
 	// TODO: I'm guessing I should set the permissions here.. what about roles.. what else?
 	public String createServiceUser(String token, String containerId) {
