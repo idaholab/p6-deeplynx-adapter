@@ -425,12 +425,13 @@ public class P6Controller {
 	// TODO: should this return something or can I just add the key/secret to the P6 db from here?
 	public void createServiceUserKeyPair(String token, String containerId, String serviceUserId) {
 			String url = System.getenv("DL_URL") + "/containers/" + containerId + "/service-users/" + serviceUserId + "/keys";
-			String requestBody = "";
+			JSONObject requestBody = new JSONObject();
+			requestBody.put("note", "p6_adapter_auth");
 
 			HttpHeaders headers = new HttpHeaders();
 			headers.setContentType(MediaType.APPLICATION_JSON);
 			headers.add(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-			HttpEntity<String> request = new HttpEntity<>(requestBody, headers);
+			HttpEntity<String> request = new HttpEntity<>(requestBody.toString(), headers);
 			RestTemplate restTemplate = new RestTemplate();
 			try {
 					ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
