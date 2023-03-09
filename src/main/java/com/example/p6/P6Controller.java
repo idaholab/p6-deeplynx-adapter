@@ -288,7 +288,7 @@ public class P6Controller {
 	@GetMapping("/redirect/{containerId}")
 	public RedirectView redirect(@PathVariable String containerId) {
 			// TODO: where does this get set during deployment?
-			String appAddress = "http://localhost:8080";
+			String appAddress = "http://localhost:8181";
 			// TODO: do I need to do that if/else check that Brennan did in the javascript script?
 			// if ( !$page.url.searchParams.has("token"))
 			String authAddress = String.format("%s/oauth/authorize?response_type=code&client_id=%s&redirect_uri=%s&state=p6_adapter&scope=all",
@@ -303,7 +303,7 @@ public class P6Controller {
 	public String exchangeToken(@RequestParam String token, @PathVariable String containerId) {
 			// exchange the temporary token for an access token
 			String url = System.getenv("DL_URL") + "/oauth/exchange";
-			String appAddress = "http://localhost:8080";
+			String appAddress = "http://localhost:8181";
 			JSONObject requestBody = new JSONObject();
 			requestBody.put("client_id", System.getenv("DL_APP_ID"));
 			requestBody.put("code", token);
