@@ -302,7 +302,9 @@ public class P6Controller {
 	// TODO: should I close the page after this exchange? I think that would require some javascript
 	public String exchangeToken(@RequestParam String token, @PathVariable String containerId) {
 			// exchange the temporary token for an access token
-			String url = System.getenv("DL_URL") + "/oauth/exchange";
+			// String url = System.getenv("DL_URL") + "/oauth/exchange";
+			// TODO: replace with env vars
+			String url = "http://host.docker.internal:8090/oauth/exchange";
 			String appAddress = "http://localhost:8181";
 			JSONObject requestBody = new JSONObject();
 			requestBody.put("client_id", System.getenv("DL_APP_ID"));
