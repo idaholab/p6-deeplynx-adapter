@@ -287,8 +287,7 @@ public class P6Controller {
 
 	@GetMapping("/redirect/{containerId}")
 	public RedirectView redirect(@PathVariable String containerId) {
-			// TODO: where does this get set during deployment?
-			String appAddress = "http://localhost:8181";
+			String appAddress = System.getenv("P6_ADAPTER_URL");
 			// TODO: do I need to do that if/else check that Brennan did in the javascript script?
 			// if ( !$page.url.searchParams.has("token"))
 			String authAddress = String.format("%s/oauth/authorize?response_type=code&client_id=%s&redirect_uri=%s&state=p6_adapter&scope=all",
@@ -313,7 +312,7 @@ public class P6Controller {
 			requestBody.put("state", "p6_adapter");
 
 			HttpHeaders headers = new HttpHeaders();
-      headers.setContentType(MediaType.APPLICATION_JSON);
+      		headers.setContentType(MediaType.APPLICATION_JSON);
 			HttpEntity<String> request = new HttpEntity<>(requestBody.toString(), headers);
 			RestTemplate restTemplate = new RestTemplate();
 			try {
@@ -343,7 +342,7 @@ public class P6Controller {
 	// TODO: is display_name required and how should I get it?
 	// TODO: I'm guessing I should set the permissions here.. what about roles.. what else?
 	public String createServiceUser(String token, String containerId) {
-			String url = System.getenv("DL_URL") + "/containers/" + containerId + "/service-users";
+			String url = System.getenv("DL_URL_INTERNAL") + "/containers/" + containerId + "/service-users";
 
 			JSONObject requestBody = new JSONObject();
 			requestBody.put("display_name", "Jack-test");
@@ -359,24 +358,21 @@ public class P6Controller {
 					if (response.getStatusCode() == HttpStatus.OK) {
 							JSONObject resObject = new JSONObject(response.getBody());
 							String serviceUserId = resObject.getJSONObject("value").getString("id");
-							// System.out.println(serviceUserId);
 							return serviceUserId;
 					} else {
 							throw new Exception("Error: " + response.getStatusCodeValue() + " - " + response.getBody());
 					}
 			} catch (HttpStatusCodeException e) {
-					// System.out.println(e.getResponseBodyAsString());
 					LOGGER.log(Level.SEVERE,"exchange failed: " + e.getResponseBodyAsString(), e);
 					return e.getResponseBodyAsString();
 			} catch (Exception e) {
-					// System.out.println(e.getMessage());
 					LOGGER.log(Level.SEVERE,"exchange failed: " + e.getMessage(), e);
 					return e.getMessage();
 			}
 	}
 
 	public void setServiceUserPermissions(String token, String containerId, String serviceUserId) {
-			String url = System.getenv("DL_URL") + "/containers/" + containerId + "/service-users/" + serviceUserId + "/permissions";
+			String url = System.getenv("DL_URL_INTERNAL") + "/containers/" + containerId + "/service-users/" + serviceUserId + "/permissions";
 
 			// Set the request headers
 			HttpHeaders headers = new HttpHeaders();
@@ -418,7 +414,7 @@ public class P6Controller {
 
 	// TODO: should this return something or can I just add the key/secret to the P6 db from here?
 	public void createServiceUserKeyPair(String token, String containerId, String serviceUserId) {
-			String url = System.getenv("DL_URL") + "/containers/" + containerId + "/service-users/" + serviceUserId + "/keys";
+			String url = System.getenv("DL_URL_INTERNAL") + "/containers/" + containerId + "/service-users/" + serviceUserId + "/keys";
 			JSONObject requestBody = new JSONObject();
 			requestBody.put("note", "p6_adapter_auth");
 
@@ -433,14 +429,11 @@ public class P6Controller {
 							JSONObject resObject = new JSONObject(response.getBody());
 							String serviceUserKey = resObject.getJSONObject("value").getString("key");
 							String serviceUserSecret = resObject.getJSONObject("value").getString("secret_raw");
-							// System.out.println(serviceUserKey);
-							// System.out.println(serviceUserSecret);
 							HashMap<String, String> newServiceUser = new HashMap<String, String>();
 							newServiceUser.put("serviceUserId", serviceUserId);
 							newServiceUser.put("serviceUserKey", serviceUserKey);
 							newServiceUser.put("serviceUserSecret", serviceUserSecret);
 							this.configure(newServiceUser);
-
 					} else {
 							throw new Exception("Error: " + response.getStatusCodeValue() + " - " + response.getBody());
 					}
