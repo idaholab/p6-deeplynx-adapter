@@ -236,32 +236,6 @@ public class P6Controller {
 	// }
 
 	/**
-    * Delete static resources
-	* TODO: remove before moving to prod
-    */
-	@DeleteMapping("/nuke")
-	public HashMap<String, String> delete() {
-
-		HashMap<String, String> status_map = new HashMap<String, String>();
-
-		status_map.put("nuke_success", "false");
-
-		LOGGER.log(Level.INFO, "POST | /nuke");
-
-		try {
-			FileUtils.cleanDirectory(new File("/var/app/sqlite"));
-			// TODO: find a way to recreate the logger
-			P6Logger.setup();
-			status_map.put("nuke_success", "true");
-		} catch (Exception e) {
-			LOGGER.log(Level.SEVERE, e.toString());
-		}
-
-
-		return status_map;
-	}
-
-	/**
     * Create an entry in the connections table for the adapter to run on
     */
 	@PostMapping("/add_cert")
@@ -288,17 +262,13 @@ public class P6Controller {
 	@GetMapping("/redirect/{containerId}")
 	public RedirectView redirect(@PathVariable String containerId) {
 			String appAddress = System.getenv("P6_ADAPTER_URL");
-			// TODO: do I need to do that if/else check that Brennan did in the javascript script?
-			// if ( !$page.url.searchParams.has("token"))
+
 			String authAddress = String.format("%s/oauth/authorize?response_type=code&client_id=%s&redirect_uri=%s&state=p6_adapter&scope=all",
 					System.getenv("DL_URL"), System.getenv("DL_APP_ID"), appAddress + "/exchange/" + containerId);
 			return new RedirectView(authAddress);
 	}
 
 	@GetMapping("/exchange/{containerId}")
-	// TODO: should I do anything with state? can add @PathParam to get state variable
-	// TODO: Should this return some type of confirmation message?
-	// TODO: should I close the page after this exchange? I think that would require some javascript
 	public String exchangeToken(@RequestParam String token, @PathVariable String containerId) {
 			// exchange the temporary token for an access token
 			String url = System.getenv("DL_URL_INTERNAL") + "/oauth/exchange";
@@ -312,7 +282,7 @@ public class P6Controller {
 			requestBody.put("state", "p6_adapter");
 
 			HttpHeaders headers = new HttpHeaders();
-      		headers.setContentType(MediaType.APPLICATION_JSON);
+      headers.setContentType(MediaType.APPLICATION_JSON);
 			HttpEntity<String> request = new HttpEntity<>(requestBody.toString(), headers);
 			RestTemplate restTemplate = new RestTemplate();
 			try {
@@ -339,13 +309,11 @@ public class P6Controller {
 			}
 	}
 
-	// TODO: is display_name required and how should I get it?
-	// TODO: I'm guessing I should set the permissions here.. what about roles.. what else?
 	public String createServiceUser(String token, String containerId) {
 			String url = System.getenv("DL_URL_INTERNAL") + "/containers/" + containerId + "/service-users";
 
 			JSONObject requestBody = new JSONObject();
-			requestBody.put("display_name", "Jack-test");
+			requestBody.put("display_name", "P6_adapter_" + containerId);
 
 			HttpHeaders headers = new HttpHeaders();
 			headers.setContentType(MediaType.APPLICATION_JSON);
@@ -412,7 +380,6 @@ public class P6Controller {
 			}
 	}
 
-	// TODO: should this return something or can I just add the key/secret to the P6 db from here?
 	public void createServiceUserKeyPair(String token, String containerId, String serviceUserId) {
 			String url = System.getenv("DL_URL_INTERNAL") + "/containers/" + containerId + "/service-users/" + serviceUserId + "/keys";
 			JSONObject requestBody = new JSONObject();
