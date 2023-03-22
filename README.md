@@ -84,6 +84,15 @@ The following endpoints will be used to interact with the adapter:
 <table>
 
 Once valid configuration data has been passed into the adapter through the `/configure` endpoint, the adapter will start syncing data between the P6 project and the Deep Lynx container specified on a regular interval
+    
+### Interval Import Logic
+- On some fixed rate interval, the adapter connects to the sqlite database p6.db
+  - For each entry in the p6.db connections table:
+    - the adapter gets the unique serviceUserKey/serviceUserSecret pair
+    - the adapter creates a new DeepLynxService instance where it first tries to authenticate with the key/secret pair and then tries to get a list of accessible containers
+      - if either the authentication fails or the list of accessible containers is empty then that entry in the p6.db connections table is deleted and the for loop moves to the next entry in the connections table
+    - DeepLynxService uses DL’s “/import/datasources?decrypted=true” endpoint to get the datasource config info
+      - For each datasource config info, a new ReadActivitiesWrapper instance is created and the importP6Data method is performed
 
 ### Debugging
 A log file with adapter function information, caught exception messages, and possible error messages can be found in `src\sqlite\Log.txt`
