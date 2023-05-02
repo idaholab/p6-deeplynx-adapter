@@ -140,7 +140,7 @@ public class DeepLynxService {
 		JSONObject queryObj = new JSONObject(this.makeHTTPRequest(urlQuery, "POST", body, null));
 		try {
 				if (queryObj.has("data")) {
-					JSONArray queryData = queryObj.getJSONObject("data").getJSONObject("metatypes").getJSONArray("Activity");
+					JSONArray queryData = queryObj.getJSONObject("data").getJSONObject("metatypes").getJSONArray(metatype);
 					// process
 					String activityIdDL;
 					List<String> nodesToDelete = new ArrayList<String>();
