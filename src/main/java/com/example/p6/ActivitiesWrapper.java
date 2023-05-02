@@ -125,6 +125,35 @@ public class ActivitiesWrapper {
         return results;
     }
 
+    public List<UDFValue> getUDFValues(P6ServiceSession session, int projectObjectID, List<UDFValueFieldType> returnParams){
+      String url = session.getP6url() + "UDFValueService?wsdl";
+      URL wsdlURL = null;
+
+      try {
+          wsdlURL = new URL(url);
+      } catch (MalformedURLException e) {
+          addError(P6ServiceMessage.MessageType.APPLICATION, "Error creating URL for UDFValueService. URL: " + url + " \nMalformedURLException thrown: " + e.getMessage());
+          LOGGER.log(Level.SEVERE, "getUDFValues wsdlURL failed: " + e.toString());
+      } catch(Exception e) {
+          LOGGER.log(Level.SEVERE, "getUDFValues wsdlURL failed: " + e.toString());
+      }
+
+      UDFValueService udfService = new UDFValueService(wsdlURL);
+      UDFValuePortType udfServicePort = udfService.getUDFValuePort();
+      session.setUserNameToken((BindingProvider)udfServicePort);
+
+      List<UDFValue> results = null;
+      try {
+          results = udfServicePort.readUDFValues(returnParams,"ProjectObjectId='" + projectObjectID + "' AND UDFTypeSubjectArea='Activity'", null);
+      } catch (com.primavera.ws.p6.udfvalue.IntegrationFault e) {
+          LOGGER.log(Level.SEVERE, "getUDFValues failed: " + e.toString());
+      } catch(Exception e) {
+          LOGGER.log(Level.SEVERE, "getUDFValues failed: " + e.toString());
+      }
+
+      return results;
+  }
+
 
     protected void addError(P6ServiceMessage.MessageType type, String messageText){
         if(errors == null){

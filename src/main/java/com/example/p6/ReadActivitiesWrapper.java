@@ -26,6 +26,8 @@ import com.primavera.ws.p6.relationship.RelationshipFieldType;
 import com.primavera.ws.p6.activitycode.ActivityCodeFieldType;
 import com.primavera.ws.p6.activitycodeassignment.ActivityCodeAssignment;
 import com.primavera.ws.p6.activitycodeassignment.ActivityCodeAssignmentFieldType;
+import com.primavera.ws.p6.udfvalue.UDFValue;
+import com.primavera.ws.p6.udfvalue.UDFValueFieldType;
 import com.primavera.ws.p6.authentication.AuthenticationService;
 import com.primavera.ws.p6.authentication.AuthenticationServicePortType;
 import com.primavera.ws.p6.authentication.IntegrationFault;
@@ -37,6 +39,7 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 	private final String fileName = "/var/app/sqlite/import.json";
 	private final String relsFileName = "/var/app/sqlite/import_rels.json";
 	private final String codesAssignmentsFileName = "/var/app/sqlite/import_code_assignments.json";
+	private final String udfValuesFileName = "/var/app/sqlite/import_udf_values.json";
 
 	public void importP6Data(Environment env, int databaseInstance){
 		DeepLynxService deeplynx = new DeepLynxService(env);
@@ -66,6 +69,10 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 
 		P6ServiceResponse response_codes = mapActivityCodeAssignments(session, deeplynx, env);
 		LOGGER.log(Level.INFO, "P6 Service Response_codes: " + response_codes.getMsg());
+
+		// could filter by projectObjectId or activityObjectIdList; projectObjectId makes more sense at the moment
+		P6ServiceResponse response_udfValues = mapActivityUDFValues(session, deeplynx, env, response.getValue1());
+		LOGGER.log(Level.INFO, "P6 Service Response_udfValues: " + response_udfValues.getMsg());
 	}
 
 	private Pair<P6ServiceResponse, Integer> mapActivities(P6ServiceSession session, DeepLynxService dlService, Environment env) {
@@ -284,6 +291,85 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		response.setMsg(msg.toString());
 
 		dlService.deleteNodes(activityCodeIDList, "ActivityCode", "ActivityCodeAssignmentId");
+
+		return response;
+	}
+
+	public P6ServiceResponse mapActivityUDFValues(P6ServiceSession session, DeepLynxService dlService, Environment env, int projectObjectId) {
+		List<UDFValueFieldType> fields = new ArrayList<UDFValueFieldType>();
+		fields.add(UDFValueFieldType.UDF_TYPE_TITLE);
+		fields.add(UDFValueFieldType.UDF_TYPE_SUBJECT_AREA);
+		// todo: do we want to support more than just type text? - probably
+		fields.add(UDFValueFieldType.UDF_TYPE_DATA_TYPE);
+		fields.add(UDFValueFieldType.TEXT);
+		fields.add(UDFValueFieldType.UDF_TYPE_OBJECT_ID);
+		fields.add(UDFValueFieldType.FOREIGN_OBJECT_ID);
+		fields.add(UDFValueFieldType.PROJECT_OBJECT_ID);
+		fields.add(UDFValueFieldType.LAST_UPDATE_DATE);
+
+		// fields.add(UDFValueFieldType.CODE_VALUE); // returns nothing - pretty sure I don't need this
+		// fields.add(UDFValueFieldType.UDF_CODE_OBJECT_ID); // returns nothing
+		// fields.add(UDFValueFieldType.DESCRIPTION); // all are blank, probably don't need this
+
+		JSONArray udfValueList = new JSONArray();
+		List<String> udfValueIDList = new ArrayList<String>();
+		for (UDFValue udf : getUDFValues(session, projectObjectId, fields)) {
+			try {
+				String foreignObjectId = Integer.toString(udf.getForeignObjectId());
+				String udfTypeObjectId = Integer.toString(udf.getUDFTypeObjectId());
+				String udfValueId = foreignObjectId + udfTypeObjectId;
+				udfValueIDList.add(udfValueId);
+
+				JSONObject udfValue = new JSONObject();
+				udfValue.put("UDFTypeTitle", udf.getUDFTypeTitle());
+				udfValue.put("UDFTypeSubjectArea", udf.getUDFTypeSubjectArea());
+				udfValue.put("UDFTypeDataType", udf.getUDFTypeDataType());
+				udfValue.put("Text", udf.getText());
+				udfValue.put("UDFTypeObjectId", udfTypeObjectId);
+				udfValue.put("ForeignObjectId", foreignObjectId);
+				udfValue.put("UDFValueId", udfValueId);
+				udfValue.put("LastUpdateDate", this.translateDate(udf.getLastUpdateDate().getValue()));
+				// udfValue.put("Description", udf.getDescription());
+
+				udfValueList.put(udfValue);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+				LOGGER.log(Level.SEVERE, "mapActivityUDFValues failed | " + e.toString());
+			}
+		}
+
+		this.writeJSONFile(udfValueList, udfValuesFileName);
+		File importFile = new File(udfValuesFileName);
+		dlService.createManualImport(importFile);
+
+		// Check for errors and create response.
+		P6ServiceResponse response = new P6ServiceResponse();
+		boolean failure = false, warning = false;
+		StringBuffer msg = new StringBuffer("");
+
+		for (P6ServiceMessage message : errors) {
+			if (message.getType() == P6ServiceMessage.MessageType.APPLICATION) {
+				failure = true;
+			} else {
+				warning = true;
+			}
+
+			msg.append(message.getType().toString() + " Error: <br/>");
+			msg.append(message.getMessage() + "<br/><br/>");
+		}
+
+		if (failure) {
+			response.setStatus("FAILURE");
+		} else if (warning) {
+			response.setStatus("WARNING");
+		} else {
+			response.setStatus("SUCCESS");
+		}
+
+		response.setMsg(msg.toString());
+
+		dlService.deleteNodes(udfValueIDList, "UDFValue", "UDFValueId");
 
 		return response;
 	}

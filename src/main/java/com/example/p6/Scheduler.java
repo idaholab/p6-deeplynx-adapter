@@ -74,7 +74,7 @@ public class Scheduler {
 							readActivitiesWrapper.importP6Data(env, 1);
 
 						} catch (Exception e) {
-						  LOGGER.log(Level.SEVERE, "Connection index j:" + j + " failed");
+						  LOGGER.log(Level.SEVERE, "Connection index j:" + j + " failed | " + e.toString());
 						}
 
 					}
