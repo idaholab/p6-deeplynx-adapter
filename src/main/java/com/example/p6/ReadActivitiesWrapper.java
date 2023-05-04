@@ -66,18 +66,27 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		}
 
 		Pair<P6ServiceResponse, Integer> response = mapActivities(session, deeplynx, env);
-		LOGGER.log(Level.INFO, "P6 Service Response: " + response.getValue0().getMsg());
+		LOGGER.log(Level.INFO, "P6 Service Response: " + response.getValue0().getStatus() + " : " + response.getValue0().getMsg());
 
 		P6ServiceResponse response_rels = mapRelationships(session, deeplynx, env, response.getValue1());
-		LOGGER.log(Level.INFO, "P6 Service Response_rels: " + response_rels.getMsg());
+		LOGGER.log(Level.INFO, "P6 Service Response_rels: " + response_rels.getStatus() + " : " + response_rels.getMsg());
 
 		P6ServiceResponse response_codes = mapActivityCodeAssignments(session, deeplynx, env);
-		LOGGER.log(Level.INFO, "P6 Service Response_codes: " + response_codes.getMsg());
+		LOGGER.log(Level.INFO, "P6 Service Response_codes: " + response_codes.getStatus() + " : " + response_codes.getMsg());
 
 		// could filter by projectObjectId or activityObjectIdList; projectObjectId makes more sense at the moment
 		P6ServiceResponse response_udfValues = mapActivityUDFValues(session, deeplynx, env, response.getValue1());
-		LOGGER.log(Level.INFO, "P6 Service Response_udfValues: " + response_udfValues.getMsg());
+		LOGGER.log(Level.INFO, "P6 Service Response_udfValues: " + response_udfValues.getStatus() + " : " + response_udfValues.getMsg());
+
+		// todo: may need to use CalendarService to get work hours per day (and maybe duration units..)
+		// CalendarService calendarService = service.getCalendarService();
+		// Project project = new Project();
+		// project.setId(projectId);
+		// Calendar calendar = calendarService.readProjectCalendar(project, null);
+		// int workHoursPerDay = calendar.getHoursPerDay();
+		// System.out.println("The work hours per day for the project are " + workHoursPerDay + " hours.");
 	}
+
 
 	private Pair<P6ServiceResponse, Integer> mapActivities(P6ServiceSession session, DeepLynxService dlService, Environment env) {
 
@@ -166,37 +175,13 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 
 		// write json to file and import
 		writeJSONFile(activityList, fileName);
-		// File importFile = new File(fileName);
-		// dlService.createManualImport(importFile);
+		File importFile = new File(fileName);
+		dlService.createManualImport(importFile);
+		// delete DL nodes that no longer exist in P6
+		dlService.deleteNodes(activityIDList, "Activity", "Id");
 
 		// Check for errors and create response.
-		P6ServiceResponse response = new P6ServiceResponse();
-		boolean failure = false, warning = false;
-		StringBuffer msg = new StringBuffer("");
-
-		// protected ArrayList<P6ServiceMessage> errors from
-		for (P6ServiceMessage message : errors) {
-			if (message.getType() == P6ServiceMessage.MessageType.APPLICATION) {
-				failure = true;
-			} else {
-				warning = true;
-			}
-
-			msg.append(message.getType().toString() + " Error: <br/>");
-			msg.append(message.getMessage() + "<br/><br/>");
-		}
-
-		if (failure) {
-			response.setStatus("FAILURE");
-		} else if (warning) {
-			response.setStatus("WARNING");
-		} else {
-			response.setStatus("SUCCESS");
-		}
-
-		response.setMsg(msg.toString());
-
-		dlService.deleteNodes(activityIDList, "Activity", "Id");
+		P6ServiceResponse response = useP6ServiceMessage(errors);
 
 		return Pair.with(response, projectObjectId);
 	}
@@ -226,30 +211,7 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		dlService.createManualImport(importFile);
 
 		// Check for errors and create response.
-		P6ServiceResponse response = new P6ServiceResponse();
-		boolean failure = false, warning = false;
-		StringBuffer msg = new StringBuffer("");
-
-		for (P6ServiceMessage message : errors) {
-			if (message.getType() == P6ServiceMessage.MessageType.APPLICATION) {
-				failure = true;
-			} else {
-				warning = true;
-			}
-
-			msg.append(message.getType().toString() + " Error: <br/>");
-			msg.append(message.getMessage() + "<br/><br/>");
-		}
-
-		if (failure) {
-			response.setStatus("FAILURE");
-		} else if (warning) {
-			response.setStatus("WARNING");
-		} else {
-			response.setStatus("SUCCESS");
-		}
-
-		response.setMsg(msg.toString());
+		P6ServiceResponse response = useP6ServiceMessage(errors);
 
 		return response;
 	}
@@ -290,34 +252,11 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		writeJSONFile(activityCodeAssignmentList, codesAssignmentsFileName);
 		File importFile = new File(codesAssignmentsFileName);
 		dlService.createManualImport(importFile);
+		// delete DL nodes that no longer exist in P6
+		dlService.deleteNodes(activityCodeIDList, "ActivityCode", "ActivityCodeAssignmentId");
 
 		// Check for errors and create response.
-		P6ServiceResponse response = new P6ServiceResponse();
-		boolean failure = false, warning = false;
-		StringBuffer msg = new StringBuffer("");
-
-		for (P6ServiceMessage message : errors) {
-			if (message.getType() == P6ServiceMessage.MessageType.APPLICATION) {
-				failure = true;
-			} else {
-				warning = true;
-			}
-
-			msg.append(message.getType().toString() + " Error: <br/>");
-			msg.append(message.getMessage() + "<br/><br/>");
-		}
-
-		if (failure) {
-			response.setStatus("FAILURE");
-		} else if (warning) {
-			response.setStatus("WARNING");
-		} else {
-			response.setStatus("SUCCESS");
-		}
-
-		response.setMsg(msg.toString());
-
-		dlService.deleteNodes(activityCodeIDList, "ActivityCode", "ActivityCodeAssignmentId");
+		P6ServiceResponse response = useP6ServiceMessage(errors);
 
 		return response;
 	}
@@ -369,72 +308,48 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		writeJSONFile(udfValueList, udfValuesFileName);
 		File importFile = new File(udfValuesFileName);
 		dlService.createManualImport(importFile);
-
+		// delete DL nodes that no longer exist in P6
+		dlService.deleteNodes(udfValueIDList, "UDFValue", "UDFValueId");
 
 		// Check for errors and create response.
-		P6ServiceResponse response = new P6ServiceResponse();
-		boolean failure = false, warning = false;
-		StringBuffer msg = new StringBuffer("");
-
-		for (P6ServiceMessage message : errors) {
-			if (message.getType() == P6ServiceMessage.MessageType.APPLICATION) {
-				failure = true;
-			} else {
-				warning = true;
-			}
-
-			msg.append(message.getType().toString() + " Error: <br/>");
-			msg.append(message.getMessage() + "<br/><br/>");
-		}
-
-		if (failure) {
-			response.setStatus("FAILURE");
-		} else if (warning) {
-			response.setStatus("WARNING");
-		} else {
-			response.setStatus("SUCCESS");
-		}
-
-		response.setMsg(msg.toString());
-
-		dlService.deleteNodes(udfValueIDList, "UDFValue", "UDFValueId");
+		P6ServiceResponse response = useP6ServiceMessage(errors);
 
 		return response;
 	}
 
-	// // errors variable comes from ActivitiesWrapper
-	// private P6ServiceResponse useP6ServiceMessage(ArrayList<P6ServiceMessage> errors) {
-	//   P6ServiceResponse response = new P6ServiceResponse();
-	//   try {
-	//     boolean failure = false, warning = false;
-	//     StringBuffer msg = new StringBuffer("");
-	//     for (P6ServiceMessage message : errors) {
-	//       if (message.getType() == P6ServiceMessage.MessageType.APPLICATION) {
-	//         failure = true;
-	//       } else {
-	//         warning = true;
-	//       }
-	//
-	//       msg.append(message.getType().toString() + " Error: <br/>");
-	//       msg.append(message.getMessage() + "<br/><br/>");
-	//     }
-	//
-	//     if (failure) {
-	//       response.setStatus("FAILURE");
-	//     } else if (warning) {
-	//       response.setStatus("WARNING");
-	//     } else {
-	//       response.setStatus("SUCCESS");
-	//     }
-	//
-	//     response.setMsg(msg.toString());
-	//
-	//   } catch (Exception e) {
-	//     LOGGER.log(Level.SEVERE,"useP6ServiceMessage failed: " + e.toString(), e);
-	//   }
-	//
-	//   return response;
-	// }
+	// errors variable comes from ActivitiesWrapper
+	private P6ServiceResponse useP6ServiceMessage(ArrayList<P6ServiceMessage> errors) {
+	  P6ServiceResponse response = new P6ServiceResponse();
+	  try {
+	    boolean failure = false, warning = false;
+	    StringBuffer msg = new StringBuffer("");
+	    for (P6ServiceMessage message : errors) {
+	      if (message.getType() == P6ServiceMessage.MessageType.APPLICATION) {
+	        failure = true;
+	      } else {
+	        warning = true;
+	      }
+
+	      msg.append(message.getType().toString() + " Error: <br/>");
+	      msg.append(message.getMessage() + "<br/><br/>");
+	    }
+
+	    if (failure) {
+	      response.setStatus("FAILURE");
+	    } else if (warning) {
+	      response.setStatus("WARNING");
+	    } else {
+	      response.setStatus("SUCCESS");
+	    }
+
+	    response.setMsg(msg.toString());
+
+	  } catch (Exception e) {
+	    LOGGER.log(Level.SEVERE,"useP6ServiceMessage failed: " + e.toString(), e);
+	  }
+
+	  return response;
+	}
 
 	private void writeJSONFile(JSONArray jsonList, String nameFile) {
 		try (FileWriter file = new FileWriter(nameFile)) {
