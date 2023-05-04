@@ -1,5 +1,6 @@
 package com.example.p6;
 
+import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.io.File;
@@ -15,12 +16,15 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.xml.ws.BindingProvider;
+import javax.xml.bind.JAXBElement;
+import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import org.javatuples.Pair;
 
+import com.primavera.ws.p6.activity.Activity;
 import com.primavera.ws.p6.activity.ActivityFieldType;
 import com.primavera.ws.p6.relationship.RelationshipFieldType;
 import com.primavera.ws.p6.activitycode.ActivityCodeFieldType;
@@ -62,114 +66,122 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		}
 
 		Pair<P6ServiceResponse, Integer> response = mapActivities(session, deeplynx, env);
-		LOGGER.log(Level.INFO, "P6 Service Response: " + response.getValue0().getMsg());
+		LOGGER.log(Level.INFO, "P6 Service Response: " + response.getValue0().getStatus() + " : " + response.getValue0().getMsg());
 
 		P6ServiceResponse response_rels = mapRelationships(session, deeplynx, env, response.getValue1());
-		LOGGER.log(Level.INFO, "P6 Service Response_rels: " + response_rels.getMsg());
+		LOGGER.log(Level.INFO, "P6 Service Response_rels: " + response_rels.getStatus() + " : " + response_rels.getMsg());
 
 		P6ServiceResponse response_codes = mapActivityCodeAssignments(session, deeplynx, env);
-		LOGGER.log(Level.INFO, "P6 Service Response_codes: " + response_codes.getMsg());
+		LOGGER.log(Level.INFO, "P6 Service Response_codes: " + response_codes.getStatus() + " : " + response_codes.getMsg());
 
 		// could filter by projectObjectId or activityObjectIdList; projectObjectId makes more sense at the moment
 		P6ServiceResponse response_udfValues = mapActivityUDFValues(session, deeplynx, env, response.getValue1());
-		LOGGER.log(Level.INFO, "P6 Service Response_udfValues: " + response_udfValues.getMsg());
+		LOGGER.log(Level.INFO, "P6 Service Response_udfValues: " + response_udfValues.getStatus() + " : " + response_udfValues.getMsg());
+
+		// todo: may need to use CalendarService to get work hours per day (and maybe duration units..)
+		// CalendarService calendarService = service.getCalendarService();
+		// Project project = new Project();
+		// project.setId(projectId);
+		// Calendar calendar = calendarService.readProjectCalendar(project, null);
+		// int workHoursPerDay = calendar.getHoursPerDay();
+		// System.out.println("The work hours per day for the project are " + workHoursPerDay + " hours.");
 	}
 
-	private Pair<P6ServiceResponse, Integer> mapActivities(P6ServiceSession session, DeepLynxService dlService, Environment env) {
-		List<ActivityFieldType> fields = new ArrayList<ActivityFieldType>();
 
-		// Must specify which fields you desire to retrieve
-		fields.add(ActivityFieldType.NAME);
-		fields.add(ActivityFieldType.START_DATE);
-		fields.add(ActivityFieldType.OBJECT_ID);
-		fields.add(ActivityFieldType.PLANNED_START_DATE);
-		fields.add(ActivityFieldType.ACTUAL_START_DATE);
-		fields.add(ActivityFieldType.PLANNED_FINISH_DATE);
-		fields.add(ActivityFieldType.ACTUAL_FINISH_DATE);
-		fields.add(ActivityFieldType.FINISH_DATE);
-		fields.add(ActivityFieldType.STATUS);
-		fields.add(ActivityFieldType.ID);
-		fields.add(ActivityFieldType.PROJECT_ID);
-		fields.add(ActivityFieldType.PROJECT_OBJECT_ID);
-		fields.add(ActivityFieldType.WBS_CODE);
-		fields.add(ActivityFieldType.WBS_NAME);
-		fields.add(ActivityFieldType.WBS_PATH);
-		fields.add(ActivityFieldType.ACTUAL_DURATION);
-		fields.add(ActivityFieldType.REMAINING_DURATION);
-		fields.add(ActivityFieldType.PLANNED_DURATION);
-		fields.add(ActivityFieldType.AT_COMPLETION_DURATION);
-		fields.add(ActivityFieldType.LAST_UPDATE_DATE);
-		fields.add(ActivityFieldType.LAST_UPDATE_USER);
-		fields.add(ActivityFieldType.CREATE_DATE);
-		fields.add(ActivityFieldType.CREATE_USER);
-		fields.add(ActivityFieldType.DATA_DATE);
+	private Pair<P6ServiceResponse, Integer> mapActivities(P6ServiceSession session, DeepLynxService dlService, Environment env) {
+
+		List<ActivityFieldType> fields = new ArrayList<>();
+		for (ActivityFieldType fieldType : ActivityFieldType.values()) {
+	    fields.add(fieldType);
+		}
 
 		JSONArray activityList = new JSONArray();
 		List<String> activityIDList = new ArrayList<String>();
 		Integer projectObjectId = null;
-		for (com.primavera.ws.p6.activity.Activity act : getActivities(session, env.getProjectID(), fields)) {
-			// need the projectObjectId to filter with in ActivitiesWrapper.getRelationships
-			// this saves the last projectObjectId; works since all the projectObjectId's are the same
-			projectObjectId = Integer.valueOf(act.getProjectObjectId());
-			String activityId = act.getId();
-			activityIDList.add(activityId);
+		for (Activity act : getActivities(session, env.getProjectID(), fields)) {
 			JSONObject activity = new JSONObject();
 
-			// when a new activity is created in P6, default data gets generated automatically for the following fields (and possibly others)
-			activity.put("Id", activityId);
-			activity.put("ProjectId", act.getProjectId());
-			activity.put("WBSCode", act.getWBSCode());
-			activity.put("WBSName", act.getWBSName());
-			activity.put("WBSPath", act.getWBSPath());
-			activity.put("Name", act.getName());
-			activity.put("CompletionStatus", act.getStatus());
-			activity.put("ProjectedStartDate", this.translateDate(act.getStartDate()));
-			activity.put("ProjectedFinishDate", this.translateDate(act.getFinishDate()));
-			activity.put("PlannedDuration", act.getPlannedDuration());
-			activity.put("ActualDuration", act.getActualDuration().getValue());
-			activity.put("RemainingDuration", act.getRemainingDuration().getValue());
-			activity.put("CompletedDuration", act.getAtCompletionDuration());
-			activity.put("LastUpdateDate", this.translateDate(act.getLastUpdateDate().getValue()));
+			try {
+				Method[] methods = Activity.class.getMethods();
+				for (Method method : methods) {
+					String methodName = method.getName();
+					if (methodName.startsWith("get")) {
+						String xmlElementName = methodName.replace("get", "");
+						// Invoke getter method
+						Object result = method.invoke(act);
 
-			// data is NOT generated automatically for these fields, so empty strings will simplify typemapping in DL
-			activity.put("ActualStartDate", act.getActualStartDate().getValue() == null ? "" : act.getActualStartDate().getValue());
-			activity.put("ActualFinishDate", act.getActualFinishDate().getValue() == null ? "" : act.getActualFinishDate().getValue());
+						// handle the cases for all the Activity property data types that we plan on supporting
+						// and place in json payload
+						if (result instanceof String) {
+							activity.put(xmlElementName, (String) result);
+						} else if (result instanceof Integer) {
+							activity.put(xmlElementName, (Integer) result);
+						} else if (result instanceof Double) {
+							activity.put(xmlElementName, (Double) result);
+						} else if (result instanceof Boolean) {
+							// todo: need some test data for Boolean
+							activity.put(xmlElementName, (Boolean) result);
+						} else if (result instanceof XMLGregorianCalendar) {
+							Date resultJAXBElement = translateDate((XMLGregorianCalendar) result);
+						} else if (result == null) {
+							  // todo: see how many transformations this generates with and without this
+								// todo: this could be a user parameter
+								//
+								// activity.put(xmlElementName, "");
+						} else if (result instanceof JAXBElement) {
+							// handle the JAXBElement's
+							Class<?> valueType = ((JAXBElement<?>) result).getDeclaredType();
+							if (valueType == Double.class) {
+								Double resultJAXBElement = ((JAXBElement<Double>) result).getValue();
+								activity.put(xmlElementName, resultJAXBElement);
+							} else if (valueType == String.class) {
+								String resultJAXBElement = ((JAXBElement<String>) result).getValue();
+								activity.put(xmlElementName, resultJAXBElement);
+							} else if (valueType == Integer.class) {
+								Integer resultJAXBElement = ((JAXBElement<Integer>) result).getValue();
+								activity.put(xmlElementName, resultJAXBElement);
+							} else if (valueType == Boolean.class) {
+								Boolean resultJAXBElement = ((JAXBElement<Boolean>) result).getValue();
+								activity.put(xmlElementName, resultJAXBElement);
+							} else if (valueType == XMLGregorianCalendar.class) {
+								Date resultJAXBElement = translateDate(((JAXBElement<XMLGregorianCalendar>) result).getValue());
+								activity.put(xmlElementName, resultJAXBElement);
+							} else {
+								System.out.println("JAXBElement: ".concat(methodName));
+							}
+						}
+						// todo: look into using web services to get other necessary info like various units (duration, cost, etc.)
+						// todo: check if there are differences between what the user sees in P6 and the names in the Activity Class - may need to use a service to translate or find/write a doc
+						// todo: possibly make use of getClass()
+						// else {
+						// 	System.out.println(methodName); // getClass
+						// }
+
+						// get Ids for later use
+						// this saves the last projectObjectId; works since all the projectObjectId's are the same
+						projectObjectId = Integer.valueOf(act.getProjectObjectId());
+						if (methodName == "getId") {
+							activityIDList.add((String) result);
+						}
+					}
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				LOGGER.log(Level.SEVERE, "mapActivities failed | " + e.toString());
+			}
 
 			activityList.put(activity);
 		}
 
 		// write json to file and import
-		this.writeJSONFile(activityList, fileName);
+		writeJSONFile(activityList, fileName);
 		File importFile = new File(fileName);
 		dlService.createManualImport(importFile);
+		// delete DL nodes that no longer exist in P6
+		dlService.deleteNodes(activityIDList, "Activity", "Id");
 
 		// Check for errors and create response.
-		P6ServiceResponse response = new P6ServiceResponse();
-		boolean failure = false, warning = false;
-		StringBuffer msg = new StringBuffer("");
-
-		for (P6ServiceMessage message : errors) {
-			if (message.getType() == P6ServiceMessage.MessageType.APPLICATION) {
-				failure = true;
-			} else {
-				warning = true;
-			}
-
-			msg.append(message.getType().toString() + " Error: <br/>");
-			msg.append(message.getMessage() + "<br/><br/>");
-		}
-
-		if (failure) {
-			response.setStatus("FAILURE");
-		} else if (warning) {
-			response.setStatus("WARNING");
-		} else {
-			response.setStatus("SUCCESS");
-		}
-
-		response.setMsg(msg.toString());
-
-		dlService.deleteNodes(activityIDList, "Activity", "Id");
+		P6ServiceResponse response = useP6ServiceMessage(errors);
 
 		return Pair.with(response, projectObjectId);
 	}
@@ -190,39 +202,16 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 			relationship.put("PredecessorProjectId", rel.getPredecessorProjectId());
 			relationship.put("SuccessorActivityId", rel.getSuccessorActivityId());
 			relationship.put("SuccessorProjectId", rel.getSuccessorProjectId());
-			relationship.put("LastUpdateDate", this.translateDate(rel.getLastUpdateDate().getValue()));
+			relationship.put("LastUpdateDate", translateDate(rel.getLastUpdateDate().getValue()));
 			relationshipList.put(relationship);
 		}
 
-		this.writeJSONFile(relationshipList, relsFileName);
+		writeJSONFile(relationshipList, relsFileName);
 		File importFile = new File(relsFileName);
 		dlService.createManualImport(importFile);
 
 		// Check for errors and create response.
-		P6ServiceResponse response = new P6ServiceResponse();
-		boolean failure = false, warning = false;
-		StringBuffer msg = new StringBuffer("");
-
-		for (P6ServiceMessage message : errors) {
-			if (message.getType() == P6ServiceMessage.MessageType.APPLICATION) {
-				failure = true;
-			} else {
-				warning = true;
-			}
-
-			msg.append(message.getType().toString() + " Error: <br/>");
-			msg.append(message.getMessage() + "<br/><br/>");
-		}
-
-		if (failure) {
-			response.setStatus("FAILURE");
-		} else if (warning) {
-			response.setStatus("WARNING");
-		} else {
-			response.setStatus("SUCCESS");
-		}
-
-		response.setMsg(msg.toString());
+		P6ServiceResponse response = useP6ServiceMessage(errors);
 
 		return response;
 	}
@@ -255,42 +244,19 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 			activityCodeAssignment.put("ProjectId", code.getProjectId());
 			activityCodeAssignment.put("ActivityCodeObjectId", code.getActivityCodeObjectId());
 			activityCodeAssignment.put("ActivityCodeAssignmentId", activityCodeAssignmentId);
-			activityCodeAssignment.put("LastUpdateDate", this.translateDate(code.getLastUpdateDate().getValue()));
+			activityCodeAssignment.put("LastUpdateDate", translateDate(code.getLastUpdateDate().getValue()));
 
 			activityCodeAssignmentList.put(activityCodeAssignment);
 		}
 
-		this.writeJSONFile(activityCodeAssignmentList, codesAssignmentsFileName);
+		writeJSONFile(activityCodeAssignmentList, codesAssignmentsFileName);
 		File importFile = new File(codesAssignmentsFileName);
 		dlService.createManualImport(importFile);
+		// delete DL nodes that no longer exist in P6
+		dlService.deleteNodes(activityCodeIDList, "ActivityCode", "ActivityCodeAssignmentId");
 
 		// Check for errors and create response.
-		P6ServiceResponse response = new P6ServiceResponse();
-		boolean failure = false, warning = false;
-		StringBuffer msg = new StringBuffer("");
-
-		for (P6ServiceMessage message : errors) {
-			if (message.getType() == P6ServiceMessage.MessageType.APPLICATION) {
-				failure = true;
-			} else {
-				warning = true;
-			}
-
-			msg.append(message.getType().toString() + " Error: <br/>");
-			msg.append(message.getMessage() + "<br/><br/>");
-		}
-
-		if (failure) {
-			response.setStatus("FAILURE");
-		} else if (warning) {
-			response.setStatus("WARNING");
-		} else {
-			response.setStatus("SUCCESS");
-		}
-
-		response.setMsg(msg.toString());
-
-		dlService.deleteNodes(activityCodeIDList, "ActivityCode", "ActivityCodeAssignmentId");
+		P6ServiceResponse response = useP6ServiceMessage(errors);
 
 		return response;
 	}
@@ -328,7 +294,7 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 				udfValue.put("UDFTypeObjectId", udfTypeObjectId);
 				udfValue.put("ForeignObjectId", foreignObjectId);
 				udfValue.put("UDFValueId", udfValueId);
-				udfValue.put("LastUpdateDate", this.translateDate(udf.getLastUpdateDate().getValue()));
+				udfValue.put("LastUpdateDate", translateDate(udf.getLastUpdateDate().getValue()));
 				// udfValue.put("Description", udf.getDescription());
 
 				udfValueList.put(udfValue);
@@ -339,42 +305,53 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 			}
 		}
 
-		this.writeJSONFile(udfValueList, udfValuesFileName);
+		writeJSONFile(udfValueList, udfValuesFileName);
 		File importFile = new File(udfValuesFileName);
 		dlService.createManualImport(importFile);
+		// delete DL nodes that no longer exist in P6
+		dlService.deleteNodes(udfValueIDList, "UDFValue", "UDFValueId");
 
 		// Check for errors and create response.
-		P6ServiceResponse response = new P6ServiceResponse();
-		boolean failure = false, warning = false;
-		StringBuffer msg = new StringBuffer("");
-
-		for (P6ServiceMessage message : errors) {
-			if (message.getType() == P6ServiceMessage.MessageType.APPLICATION) {
-				failure = true;
-			} else {
-				warning = true;
-			}
-
-			msg.append(message.getType().toString() + " Error: <br/>");
-			msg.append(message.getMessage() + "<br/><br/>");
-		}
-
-		if (failure) {
-			response.setStatus("FAILURE");
-		} else if (warning) {
-			response.setStatus("WARNING");
-		} else {
-			response.setStatus("SUCCESS");
-		}
-
-		response.setMsg(msg.toString());
-
-		dlService.deleteNodes(udfValueIDList, "UDFValue", "UDFValueId");
+		P6ServiceResponse response = useP6ServiceMessage(errors);
 
 		return response;
 	}
 
-	public void writeJSONFile(JSONArray jsonList, String nameFile) {
+	// errors variable comes from ActivitiesWrapper
+	private P6ServiceResponse useP6ServiceMessage(ArrayList<P6ServiceMessage> errors) {
+	  P6ServiceResponse response = new P6ServiceResponse();
+	  try {
+	    boolean failure = false, warning = false;
+	    StringBuffer msg = new StringBuffer("");
+	    for (P6ServiceMessage message : errors) {
+	      if (message.getType() == P6ServiceMessage.MessageType.APPLICATION) {
+	        failure = true;
+	      } else {
+	        warning = true;
+	      }
+
+	      msg.append(message.getType().toString() + " Error: <br/>");
+	      msg.append(message.getMessage() + "<br/><br/>");
+	    }
+
+	    if (failure) {
+	      response.setStatus("FAILURE");
+	    } else if (warning) {
+	      response.setStatus("WARNING");
+	    } else {
+	      response.setStatus("SUCCESS");
+	    }
+
+	    response.setMsg(msg.toString());
+
+	  } catch (Exception e) {
+	    LOGGER.log(Level.SEVERE,"useP6ServiceMessage failed: " + e.toString(), e);
+	  }
+
+	  return response;
+	}
+
+	private void writeJSONFile(JSONArray jsonList, String nameFile) {
 		try (FileWriter file = new FileWriter(nameFile)) {
 
 			file.write(jsonList.toString());
@@ -388,37 +365,37 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		}
 	}
 
-	public static  Date translateDate(javax.xml.datatype.XMLGregorianCalendar date){
+	public static  Date translateDate(XMLGregorianCalendar date){
 	        return date == null ? null : date.toGregorianCalendar().getTime();
 	}
 
-	public static Date translateDate(String dateString){
-        GregorianCalendar calendar = (GregorianCalendar)GregorianCalendar.getInstance();
-        SimpleDateFormat sdf = new SimpleDateFormat();
-
-        try {
-            if (dateString != null){
-                if (dateString.matches("^(0[1-9]|1[012])/(0[1-9]|[12][0-9]|3[01])/(19|20)\\d\\d$")){
-                    sdf = new SimpleDateFormat("MM/dd/yyyy");
-                }
-                else if (dateString.matches("^(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])-(19|20)\\d\\d$")){
-                    sdf = new SimpleDateFormat("MM-dd-yyyy");
-                }
-                else if (dateString.matches("^(19|20)\\d\\d(0[1-9]|1[012])(0[1-9]|[12][0-9]|3[01])$")){
-                    sdf = new SimpleDateFormat("yyyyMMdd");
-                }
-                else if (dateString.matches("^(19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$")){
-                    sdf = new SimpleDateFormat("yyyy-MM-dd");
-                }
-
-                calendar.setTime(sdf.parse(dateString));
-            }
-        } catch (ParseException e) {
-						LOGGER.log(Level.SEVERE,"translateDate failed: " + e.toString(), e);
-        } catch (Exception e) {
-						LOGGER.log(Level.SEVERE,"translateDate failed: " + e.toString(), e);
-        }
-        return calendar.getTime();
-    }
+	// public static Date translateDate(String dateString){
+  //       GregorianCalendar calendar = (GregorianCalendar)GregorianCalendar.getInstance();
+  //       SimpleDateFormat sdf = new SimpleDateFormat();
+	//
+  //       try {
+  //           if (dateString != null){
+  //               if (dateString.matches("^(0[1-9]|1[012])/(0[1-9]|[12][0-9]|3[01])/(19|20)\\d\\d$")){
+  //                   sdf = new SimpleDateFormat("MM/dd/yyyy");
+  //               }
+  //               else if (dateString.matches("^(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])-(19|20)\\d\\d$")){
+  //                   sdf = new SimpleDateFormat("MM-dd-yyyy");
+  //               }
+  //               else if (dateString.matches("^(19|20)\\d\\d(0[1-9]|1[012])(0[1-9]|[12][0-9]|3[01])$")){
+  //                   sdf = new SimpleDateFormat("yyyyMMdd");
+  //               }
+  //               else if (dateString.matches("^(19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$")){
+  //                   sdf = new SimpleDateFormat("yyyy-MM-dd");
+  //               }
+	//
+  //               calendar.setTime(sdf.parse(dateString));
+  //           }
+  //       } catch (ParseException e) {
+	// 					LOGGER.log(Level.SEVERE,"translateDate failed: " + e.toString(), e);
+  //       } catch (Exception e) {
+	// 					LOGGER.log(Level.SEVERE,"translateDate failed: " + e.toString(), e);
+  //       }
+  //       return calendar.getTime();
+  //   }
 
 }
