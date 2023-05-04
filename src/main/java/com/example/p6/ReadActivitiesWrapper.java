@@ -45,6 +45,9 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 	private final String codesAssignmentsFileName = "/var/app/sqlite/import_code_assignments.json";
 	private final String udfValuesFileName = "/var/app/sqlite/import_udf_values.json";
 
+	// todo: could make getting this a little better
+	private Integer projectObjectId;
+
 	public void importP6Data(Environment env, int databaseInstance){
 		DeepLynxService deeplynx = new DeepLynxService(env);
 		deeplynx.authenticate();
@@ -65,17 +68,17 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 			LOGGER.log(Level.SEVERE, "P6 AuthenticationService failed with p6url " + env.getP6URL() + " and username " + env.getUserName(), e);
 		}
 
-		Pair<P6ServiceResponse, Integer> response = mapActivities(session, deeplynx, env);
-		LOGGER.log(Level.INFO, "P6 Service Response: " + response.getValue0().getStatus() + " : " + response.getValue0().getMsg());
+		P6ServiceResponse response = mapActivities(session, deeplynx, env);
+		LOGGER.log(Level.INFO, "P6 Service Response: " + response.getStatus() + " : " + response.getMsg());
 
-		P6ServiceResponse response_rels = mapRelationships(session, deeplynx, env, response.getValue1());
+		P6ServiceResponse response_rels = mapRelationships(session, deeplynx, env, projectObjectId);
 		LOGGER.log(Level.INFO, "P6 Service Response_rels: " + response_rels.getStatus() + " : " + response_rels.getMsg());
 
 		P6ServiceResponse response_codes = mapActivityCodeAssignments(session, deeplynx, env);
 		LOGGER.log(Level.INFO, "P6 Service Response_codes: " + response_codes.getStatus() + " : " + response_codes.getMsg());
 
 		// could filter by projectObjectId or activityObjectIdList; projectObjectId makes more sense at the moment
-		P6ServiceResponse response_udfValues = mapActivityUDFValues(session, deeplynx, env, response.getValue1());
+		P6ServiceResponse response_udfValues = mapActivityUDFValues(session, deeplynx, env, projectObjectId);
 		LOGGER.log(Level.INFO, "P6 Service Response_udfValues: " + response_udfValues.getStatus() + " : " + response_udfValues.getMsg());
 
 		// todo: may need to use CalendarService to get work hours per day (and maybe duration units..)
@@ -87,8 +90,86 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		// System.out.println("The work hours per day for the project are " + workHoursPerDay + " hours.");
 	}
 
+	// todo: look into using web services to get other necessary info like various units (duration, cost, etc.)
+	// todo: check if there are differences between what the user sees in P6 and the names in the Activity Class - may need to use a service to translate or find/write a doc
+	// todo: possibly make use of getClass() - could make a generic mapClassInstances() method
 
-	private Pair<P6ServiceResponse, Integer> mapActivities(P6ServiceSession session, DeepLynxService dlService, Environment env) {
+	private Pair<JSONObject, String> genericP6DataGetter (Object instance, Method[] methods, Boolean getProjectObjectId) {
+		JSONObject datum = new JSONObject();
+		String datumId = new String();
+
+		try {
+			for (Method method : methods) {
+				String methodName = method.getName();
+				if (methodName.startsWith("get")) {
+					String xmlElementName = methodName.replace("get", "");
+					// Invoke getter method
+					Object result = method.invoke(instance);
+
+					// handle the cases for all the Activity property data types that we plan on supporting
+					// and place in json payload
+					if (result instanceof String) {
+						datum.put(xmlElementName, (String) result);
+					} else if (result instanceof Integer) {
+						datum.put(xmlElementName, (Integer) result);
+					} else if (result instanceof Double) {
+						datum.put(xmlElementName, (Double) result);
+					} else if (result instanceof Boolean) {
+						// todo: need some test data for Boolean
+						datum.put(xmlElementName, (Boolean) result);
+					} else if (result instanceof XMLGregorianCalendar) {
+						Date resultJAXBElement = translateDate((XMLGregorianCalendar) result);
+					} else if (result == null) {
+							// todo: see how many transformations this generates with and without this
+							// todo: this could be a user parameter
+							datum.put(xmlElementName, "");
+					} else if (result instanceof JAXBElement) {
+						// handle the JAXBElement's
+						Class<?> valueType = ((JAXBElement<?>) result).getDeclaredType();
+						if (valueType == Double.class) {
+							Double resultJAXBElement = ((JAXBElement<Double>) result).getValue();
+							datum.put(xmlElementName, resultJAXBElement);
+						} else if (valueType == String.class) {
+							String resultJAXBElement = ((JAXBElement<String>) result).getValue();
+							datum.put(xmlElementName, resultJAXBElement);
+						} else if (valueType == Integer.class) {
+							Integer resultJAXBElement = ((JAXBElement<Integer>) result).getValue();
+							datum.put(xmlElementName, resultJAXBElement);
+						} else if (valueType == Boolean.class) {
+							Boolean resultJAXBElement = ((JAXBElement<Boolean>) result).getValue();
+							datum.put(xmlElementName, resultJAXBElement);
+						} else if (valueType == XMLGregorianCalendar.class) {
+							Date resultJAXBElement = translateDate(((JAXBElement<XMLGregorianCalendar>) result).getValue());
+							datum.put(xmlElementName, resultJAXBElement);
+						} else {
+							System.out.println("JAXBElement: ".concat(methodName));
+						}
+					}
+					// else {
+					// 	System.out.println(methodName); // getClass
+					// }
+
+					// get Ids for later use
+					if (methodName == "getId") {
+						datumId = (String) result;
+					}
+
+					if (getProjectObjectId == true && methodName == "getProjectObjectId") {
+						// this saves the last projectObjectId; works since all the projectObjectId's are the same
+						projectObjectId = (Integer) result;
+					}
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			LOGGER.log(Level.SEVERE, "genericP6DataGetter failed | " + e.toString());
+		}
+
+		return Pair.with(datum, datumId);
+	}
+
+
+	private P6ServiceResponse mapActivities(P6ServiceSession session, DeepLynxService dlService, Environment env) {
 
 		List<ActivityFieldType> fields = new ArrayList<>();
 		for (ActivityFieldType fieldType : ActivityFieldType.values()) {
@@ -97,80 +178,18 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 
 		JSONArray activityList = new JSONArray();
 		List<String> activityIDList = new ArrayList<String>();
-		Integer projectObjectId = null;
 		for (Activity act : getActivities(session, env.getProjectID(), fields)) {
-			JSONObject activity = new JSONObject();
+			Method[] methods = Activity.class.getMethods();
+			Boolean saveProjectObjectId = true;
 
 			try {
-				Method[] methods = Activity.class.getMethods();
-				for (Method method : methods) {
-					String methodName = method.getName();
-					if (methodName.startsWith("get")) {
-						String xmlElementName = methodName.replace("get", "");
-						// Invoke getter method
-						Object result = method.invoke(act);
-
-						// handle the cases for all the Activity property data types that we plan on supporting
-						// and place in json payload
-						if (result instanceof String) {
-							activity.put(xmlElementName, (String) result);
-						} else if (result instanceof Integer) {
-							activity.put(xmlElementName, (Integer) result);
-						} else if (result instanceof Double) {
-							activity.put(xmlElementName, (Double) result);
-						} else if (result instanceof Boolean) {
-							// todo: need some test data for Boolean
-							activity.put(xmlElementName, (Boolean) result);
-						} else if (result instanceof XMLGregorianCalendar) {
-							Date resultJAXBElement = translateDate((XMLGregorianCalendar) result);
-						} else if (result == null) {
-							  // todo: see how many transformations this generates with and without this
-								// todo: this could be a user parameter
-								//
-								// activity.put(xmlElementName, "");
-						} else if (result instanceof JAXBElement) {
-							// handle the JAXBElement's
-							Class<?> valueType = ((JAXBElement<?>) result).getDeclaredType();
-							if (valueType == Double.class) {
-								Double resultJAXBElement = ((JAXBElement<Double>) result).getValue();
-								activity.put(xmlElementName, resultJAXBElement);
-							} else if (valueType == String.class) {
-								String resultJAXBElement = ((JAXBElement<String>) result).getValue();
-								activity.put(xmlElementName, resultJAXBElement);
-							} else if (valueType == Integer.class) {
-								Integer resultJAXBElement = ((JAXBElement<Integer>) result).getValue();
-								activity.put(xmlElementName, resultJAXBElement);
-							} else if (valueType == Boolean.class) {
-								Boolean resultJAXBElement = ((JAXBElement<Boolean>) result).getValue();
-								activity.put(xmlElementName, resultJAXBElement);
-							} else if (valueType == XMLGregorianCalendar.class) {
-								Date resultJAXBElement = translateDate(((JAXBElement<XMLGregorianCalendar>) result).getValue());
-								activity.put(xmlElementName, resultJAXBElement);
-							} else {
-								System.out.println("JAXBElement: ".concat(methodName));
-							}
-						}
-						// todo: look into using web services to get other necessary info like various units (duration, cost, etc.)
-						// todo: check if there are differences between what the user sees in P6 and the names in the Activity Class - may need to use a service to translate or find/write a doc
-						// todo: possibly make use of getClass()
-						// else {
-						// 	System.out.println(methodName); // getClass
-						// }
-
-						// get Ids for later use
-						// this saves the last projectObjectId; works since all the projectObjectId's are the same
-						projectObjectId = Integer.valueOf(act.getProjectObjectId());
-						if (methodName == "getId") {
-							activityIDList.add((String) result);
-						}
-					}
-				}
+				Pair<JSONObject, String> activityData = genericP6DataGetter(act, methods, saveProjectObjectId);
+				activityList.put(activityData.getValue0());
+				activityIDList.add(activityData.getValue1());
 			} catch (Exception e) {
 				e.printStackTrace();
 				LOGGER.log(Level.SEVERE, "mapActivities failed | " + e.toString());
 			}
-
-			activityList.put(activity);
 		}
 
 		// write json to file and import
@@ -183,7 +202,7 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		// Check for errors and create response.
 		P6ServiceResponse response = useP6ServiceMessage(errors);
 
-		return Pair.with(response, projectObjectId);
+		return response;
 	}
 
 	private P6ServiceResponse mapRelationships(P6ServiceSession session, DeepLynxService dlService, Environment env, int projectObjectId) {
@@ -263,41 +282,27 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 
 	public P6ServiceResponse mapActivityUDFValues(P6ServiceSession session, DeepLynxService dlService, Environment env, int projectObjectId) {
 		List<UDFValueFieldType> fields = new ArrayList<UDFValueFieldType>();
-		fields.add(UDFValueFieldType.UDF_TYPE_TITLE);
-		fields.add(UDFValueFieldType.UDF_TYPE_SUBJECT_AREA);
-		// todo: do we want to support more than just type text? - probably
-		fields.add(UDFValueFieldType.UDF_TYPE_DATA_TYPE);
-		fields.add(UDFValueFieldType.TEXT);
-		fields.add(UDFValueFieldType.UDF_TYPE_OBJECT_ID);
-		fields.add(UDFValueFieldType.FOREIGN_OBJECT_ID);
-		fields.add(UDFValueFieldType.PROJECT_OBJECT_ID);
-		fields.add(UDFValueFieldType.LAST_UPDATE_DATE);
-
-		// fields.add(UDFValueFieldType.CODE_VALUE); // returns nothing - pretty sure I don't need this
-		// fields.add(UDFValueFieldType.UDF_CODE_OBJECT_ID); // returns nothing
-		// fields.add(UDFValueFieldType.DESCRIPTION); // all are blank, probably don't need this
+		for (UDFValueFieldType fieldType : UDFValueFieldType.values()) {
+	    fields.add(fieldType);
+		}
 
 		JSONArray udfValueList = new JSONArray();
 		List<String> udfValueIDList = new ArrayList<String>();
 		for (UDFValue udf : getUDFValues(session, projectObjectId, fields)) {
+			Method[] methods = UDFValue.class.getMethods();
+			Boolean saveProjectObjectId = false;
+
 			try {
+				// todo: refactor udfValueId part
 				String foreignObjectId = Integer.toString(udf.getForeignObjectId());
 				String udfTypeObjectId = Integer.toString(udf.getUDFTypeObjectId());
 				String udfValueId = foreignObjectId + udfTypeObjectId;
 				udfValueIDList.add(udfValueId);
+				// udfValue.put("UDFValueId", udfValueId);
 
-				JSONObject udfValue = new JSONObject();
-				udfValue.put("UDFTypeTitle", udf.getUDFTypeTitle());
-				udfValue.put("UDFTypeSubjectArea", udf.getUDFTypeSubjectArea());
-				udfValue.put("UDFTypeDataType", udf.getUDFTypeDataType());
-				udfValue.put("Text", udf.getText());
-				udfValue.put("UDFTypeObjectId", udfTypeObjectId);
-				udfValue.put("ForeignObjectId", foreignObjectId);
-				udfValue.put("UDFValueId", udfValueId);
-				udfValue.put("LastUpdateDate", translateDate(udf.getLastUpdateDate().getValue()));
-				// udfValue.put("Description", udf.getDescription());
-
-				udfValueList.put(udfValue);
+				Pair<JSONObject, String> udfValueData = genericP6DataGetter(udf, methods, saveProjectObjectId);
+				udfValueList.put(udfValueData.getValue0());
+				udfValueIDList.add(udfValueData.getValue1());
 
 			} catch (Exception e) {
 				e.printStackTrace();
