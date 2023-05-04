@@ -4,22 +4,16 @@ public class SQLMigration {
     public static String createConnectionsTable() {
         String sql = "CREATE TABLE IF NOT EXISTS connections (\n"
                    + "    id integer PRIMARY KEY,\n"
-                   + "    deepLynxURL text NOT NULL,\n"
-                   + "    deepLynxContainerId text NOT NULL,\n"
-                   + "    deepLynxDatasourceId text NOT NULL,\n"
-                   + "    deepLynxApiKey text NOT NULL,\n"
-                   + "    deepLynxApiSecret blob NOT NULL,\n"
-                   + "    p6URL text NOT NULL,\n"
-                   + "    p6Project text NOT NULL,\n"
-                   + "    p6Username text NOT NULL,\n"
-                   + "    p6Password blob NOT NULL\n"
+                   + "    serviceUserId text NOT NULL,\n"
+                   + "    serviceUserKey text NOT NULL,\n"
+                   + "    serviceUserSecret blob NOT NULL\n"
                    + ");\n";
         return sql;
     }
 
     public static String createConnectionsUniqueId() {
         String sql = "CREATE UNIQUE INDEX IF NOT EXISTS connections_idx\n"
-                   + "    on connections (deepLynxURL, deepLynxContainerId, deepLynxDatasourceId);";
+                   + "    on connections (serviceUserId, serviceUserKey, serviceUserSecret);";
         return sql;
     }
 

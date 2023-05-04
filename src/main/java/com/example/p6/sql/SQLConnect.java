@@ -99,10 +99,8 @@ public class SQLConnect {
             cipher.init(Cipher.ENCRYPT_MODE, aesKey);
 
             // encrypt sensitive values
-            byte[] encDLAPISecret = cipher.doFinal(connection_map.get("deepLynxApiSecret").getBytes());
+            byte[] encDLAPISecret = cipher.doFinal(connection_map.get("serviceUserSecret").getBytes());
             String encDLAPISecretString = Base64.getEncoder().encodeToString(encDLAPISecret);
-            byte[] encP6Password = cipher.doFinal(connection_map.get("p6Password").getBytes());
-            String encP6PasswordString = Base64.getEncoder().encodeToString(encP6Password);
 
             // initialize statement
             Statement stmt = conn.createStatement();
@@ -110,15 +108,9 @@ public class SQLConnect {
             // addition
             SQLAction sqlact = new SQLAction();
             int rowsAffected = stmt.executeUpdate(sqlact.replaceIntoConnectionsEntry(
-                connection_map.get("deepLynxURL"),
-                connection_map.get("deepLynxContainerId"),
-                connection_map.get("deepLynxDatasourceId"),
-                connection_map.get("deepLynxApiKey"),
-                encDLAPISecretString,
-                connection_map.get("p6URL"),
-                connection_map.get("p6Project"),
-                connection_map.get("p6Username"),
-                encP6PasswordString
+                connection_map.get("serviceUserId"),
+                connection_map.get("serviceUserKey"),
+                encDLAPISecretString
             ));
             return rowsAffected;
 
@@ -131,94 +123,94 @@ public class SQLConnect {
     /**
     * Add entry to the connections table, it encrypts the key/password values
     */
-    public static int updateConnection(HashMap<String, String> connection_map) {
-        try {
-            // setup cipher for encryption
-            String key = System.getenv("P6_ENCRYPTION_KEY");
-            Key aesKey = new SecretKeySpec(key.getBytes(), "AES");
-            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-            cipher.init(Cipher.ENCRYPT_MODE, aesKey);
-
-            // encrypt sensitive values
-            byte[] encP6Password = cipher.doFinal(connection_map.get("p6Password").getBytes());
-            String encP6PasswordString = Base64.getEncoder().encodeToString(encP6Password);
-
-            // initialize statement
-            Statement stmt = conn.createStatement();
-
-            // addition
-            SQLAction sqlact = new SQLAction();
-
-            // get old DL secret
-            ResultSet rs = stmt.executeQuery(sqlact.getConnectionEncDLSecret(
-                connection_map.get("deepLynxURL"),
-                connection_map.get("deepLynxContainerId"),
-                connection_map.get("deepLynxDatasourceId")
-            ));
-
-            int rowsAffected = 0;
-            while (rs.next()) {
-                String old_DL_secret = rs.getString("deepLynxApiSecret");
-
-                // insert updated entry
-                rowsAffected = stmt.executeUpdate(sqlact.replaceIntoConnectionsEntry(
-                    connection_map.get("deepLynxURL"),
-                    connection_map.get("deepLynxContainerId"),
-                    connection_map.get("deepLynxDatasourceId"),
-                    connection_map.get("deepLynxApiKey"),
-                    old_DL_secret,
-                    connection_map.get("p6URL"),
-                    connection_map.get("p6Project"),
-                    connection_map.get("p6Username"),
-                    encP6PasswordString
-                ));
-            }
-            
-            return rowsAffected;
-
-        } catch (Exception ex) {
-            LOGGER.log(Level.SEVERE, ex.getMessage());
-            return 0;
-        }
-    }
+    // public static int updateConnection(HashMap<String, String> connection_map) {
+    //     try {
+    //         // setup cipher for encryption
+    //         String key = System.getenv("P6_ENCRYPTION_KEY");
+    //         Key aesKey = new SecretKeySpec(key.getBytes(), "AES");
+    //         Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+    //         cipher.init(Cipher.ENCRYPT_MODE, aesKey);
+    //
+    //         // encrypt sensitive values
+    //         byte[] encP6Password = cipher.doFinal(connection_map.get("p6Password").getBytes());
+    //         String encP6PasswordString = Base64.getEncoder().encodeToString(encP6Password);
+    //
+    //         // initialize statement
+    //         Statement stmt = conn.createStatement();
+    //
+    //         // addition
+    //         SQLAction sqlact = new SQLAction();
+    //
+    //         // get old DL secret
+    //         ResultSet rs = stmt.executeQuery(sqlact.getConnectionEncDLSecret(
+    //             connection_map.get("deepLynxURL"),
+    //             connection_map.get("deepLynxContainerId"),
+    //             connection_map.get("deepLynxDatasourceId")
+    //         ));
+    //
+    //         int rowsAffected = 0;
+    //         while (rs.next()) {
+    //             String old_DL_secret = rs.getString("deepLynxApiSecret");
+    //
+    //             // insert updated entry
+    //             rowsAffected = stmt.executeUpdate(sqlact.replaceIntoConnectionsEntry(
+    //                 connection_map.get("deepLynxURL"),
+    //                 connection_map.get("deepLynxContainerId"),
+    //                 connection_map.get("deepLynxDatasourceId"),
+    //                 connection_map.get("deepLynxApiKey"),
+    //                 old_DL_secret,
+    //                 connection_map.get("p6URL"),
+    //                 connection_map.get("p6Project"),
+    //                 connection_map.get("p6Username"),
+    //                 encP6PasswordString
+    //             ));
+    //         }
+    //
+    //         return rowsAffected;
+    //
+    //     } catch (Exception ex) {
+    //         LOGGER.log(Level.SEVERE, ex.getMessage());
+    //         return 0;
+    //     }
+    // }
 
     /**
     * Delete an entry from the connections table
     */
-    public static int deleteConnection(HashMap<String, String> connection_map) {
-        try {
-            // setup cipher for encryption
-            String key = System.getenv("P6_ENCRYPTION_KEY");
-            Key aesKey = new SecretKeySpec(key.getBytes(), "AES");
-            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-            cipher.init(Cipher.ENCRYPT_MODE, aesKey);
-
-            // encrypt sensitive values
-            byte[] encP6Password = cipher.doFinal(connection_map.get("p6Password").getBytes());
-            String encP6PasswordString = Base64.getEncoder().encodeToString(encP6Password);
-
-            // initialize statement
-            Statement stmt = conn.createStatement();
-
-            // addition
-            SQLAction sqlact = new SQLAction();
-            int rowsAffected = stmt.executeUpdate(sqlact.deleteConnectionsEntry(
-                connection_map.get("deepLynxURL"),
-                connection_map.get("deepLynxContainerId"),
-                connection_map.get("deepLynxDatasourceId"),
-                connection_map.get("deepLynxApiKey"),
-                connection_map.get("p6URL"),
-                connection_map.get("p6Project"),
-                connection_map.get("p6Username"),
-                encP6PasswordString
-            ));
-            return rowsAffected;
-
-        } catch (Exception ex) {
-            LOGGER.log(Level.SEVERE, ex.getMessage());
-            return 0;
-        }
-    }
+    // public static int deleteConnection(HashMap<String, String> connection_map) {
+    //     try {
+    //         // setup cipher for encryption
+    //         String key = System.getenv("P6_ENCRYPTION_KEY");
+    //         Key aesKey = new SecretKeySpec(key.getBytes(), "AES");
+    //         Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+    //         cipher.init(Cipher.ENCRYPT_MODE, aesKey);
+    //
+    //         // encrypt sensitive values
+    //         byte[] encP6Password = cipher.doFinal(connection_map.get("p6Password").getBytes());
+    //         String encP6PasswordString = Base64.getEncoder().encodeToString(encP6Password);
+    //
+    //         // initialize statement
+    //         Statement stmt = conn.createStatement();
+    //
+    //         // addition
+    //         SQLAction sqlact = new SQLAction();
+    //         int rowsAffected = stmt.executeUpdate(sqlact.deleteConnectionsEntry(
+    //             connection_map.get("deepLynxURL"),
+    //             connection_map.get("deepLynxContainerId"),
+    //             connection_map.get("deepLynxDatasourceId"),
+    //             connection_map.get("deepLynxApiKey"),
+    //             connection_map.get("p6URL"),
+    //             connection_map.get("p6Project"),
+    //             connection_map.get("p6Username"),
+    //             encP6PasswordString
+    //         ));
+    //         return rowsAffected;
+    //
+    //     } catch (Exception ex) {
+    //         LOGGER.log(Level.SEVERE, ex.getMessage());
+    //         return 0;
+    //     }
+    // }
 
     /**
     * Get all entries from connections table
@@ -243,20 +235,12 @@ public class SQLConnect {
                 HashMap<String, String> tempMap = new HashMap<String, String>();
 
                 // decrypt sensitive values
-                byte[] encDLAPISecretBytes = Base64.getDecoder().decode(rs.getString("deepLynxApiSecret").getBytes());
+                byte[] encDLAPISecretBytes = Base64.getDecoder().decode(rs.getString("serviceUserSecret").getBytes());
                 String decDLAPISecret = new String(cipher.doFinal(encDLAPISecretBytes));
-                byte[] encP6PasswordBytes = Base64.getDecoder().decode(rs.getString("p6Password").getBytes());
-                String decP6Password = new String(cipher.doFinal(encP6PasswordBytes));
 
-                tempMap.put("deepLynxURL", rs.getString("deepLynxURL"));
-                tempMap.put("deepLynxContainerId", rs.getString("deepLynxContainerId"));
-                tempMap.put("deepLynxDatasourceId", rs.getString("deepLynxDatasourceId"));
-                tempMap.put("deepLynxApiKey", rs.getString("deepLynxApiKey"));
-                tempMap.put("deepLynxApiSecret", decDLAPISecret);
-                tempMap.put("p6URL", rs.getString("p6URL"));
-                tempMap.put("p6Project", rs.getString("p6Project"));
-                tempMap.put("p6Username", rs.getString("p6Username"));
-                tempMap.put("p6Password", decP6Password);
+                tempMap.put("serviceUserId", rs.getString("serviceUserId"));
+                tempMap.put("serviceUserKey", rs.getString("serviceUserKey"));
+                tempMap.put("serviceUserSecret", decDLAPISecret);
 
                 connectionsList.add(tempMap);
             }
