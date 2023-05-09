@@ -14,9 +14,11 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Map;
 import javax.xml.ws.BindingProvider;
 import javax.xml.bind.JAXBElement;
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -76,20 +78,15 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		P6ServiceResponse response_rels = mapRelationships(session, deeplynx, env, projectObjectId);
 		LOGGER.log(Level.INFO, "P6 Service Response_rels: " + response_rels.getStatus() + " : " + response_rels.getMsg());
 
-		P6ServiceResponse response_codes = mapActivityCodeAssignments(session, deeplynx, env);
-		LOGGER.log(Level.INFO, "P6 Service Response_codes: " + response_codes.getStatus() + " : " + response_codes.getMsg());
+		// P6ServiceResponse response_codes = mapActivityCodeAssignments(session, deeplynx, env);
+		// LOGGER.log(Level.INFO, "P6 Service Response_codes: " + response_codes.getStatus() + " : " + response_codes.getMsg());
 
-		P6ServiceResponse response_udfValues = mapActivityUDFValues(session, deeplynx, env, projectObjectId);
-		LOGGER.log(Level.INFO, "P6 Service Response_udfValues: " + response_udfValues.getStatus() + " : " + response_udfValues.getMsg());
+		// P6ServiceResponse response_udfValues = mapActivityUDFValues(session, deeplynx, env, projectObjectId).getValue0();
+		// LOGGER.log(Level.INFO, "P6 Service Response_udfValues: " + response_udfValues.getStatus() + " : " + response_udfValues.getMsg());
 	}
 
-	// todo: consider supporting web services (calendar and possibly others) to get other necessary info like various units (duration, cost, etc.)
-	// todo: check if there are differences between what the user sees in P6 and the names in the Activity Class - may need to use a service to translate or find/write a doc
-	// todo: possibly make use of getClass() - could make a generic mapClassInstances() method
-
-	private Pair<JSONObject, String> genericP6DataGetter (Object instance, Method[] methods, Boolean getProjectObjectId) {
+	private JSONObject genericP6DataGetter (Object instance, Method[] methods, Boolean getProjectObjectId) {
 		JSONObject datum = new JSONObject();
-		String datumId = new String();
 
 		try {
 			for (Method method : methods) {
@@ -151,12 +148,8 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 					// 	LOGGER.log(Level.WARNING, xmlElementName.concat(" data not currently supported"));
 					// }
 
-					// get Ids for later use
-					if (methodName == "getId") {
-						datumId = (String) result;
-					}
 
-					if (getProjectObjectId == true && methodName == "getProjectObjectId") {
+					if (getProjectObjectId == true && methodName.equals("getProjectObjectId")) {
 						// this saves the last projectObjectId; works since all the projectObjectId's are the same
 						projectObjectId = (Integer) result;
 					}
@@ -167,7 +160,7 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 			LOGGER.log(Level.SEVERE, "genericP6DataGetter failed | " + e.toString());
 		}
 
-		return Pair.with(datum, datumId);
+		return datum;
 	}
 
 
@@ -185,14 +178,51 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 			Boolean saveProjectObjectId = true;
 
 			try {
-				Pair<JSONObject, String> activityData = genericP6DataGetter(act, methods, saveProjectObjectId);
-				activityList.put(activityData.getValue0());
-				activityIDList.add(activityData.getValue1());
+				JSONObject activityData = genericP6DataGetter(act, methods, saveProjectObjectId);
+				activityList.put(activityData);
+				String activityID = activityData.getString("Id");
+				activityIDList.add(activityID);
 			} catch (Exception e) {
 				e.printStackTrace();
 				LOGGER.log(Level.SEVERE, "mapActivities failed | " + e.toString());
 			}
 		}
+
+		// UDFValues
+		Pair<P6ServiceResponse, HashMap<String, JSONObject>> udfValues = mapActivityUDFValues(session, dlService, env, projectObjectId);
+		P6ServiceResponse response_udfValues = udfValues.getValue0();
+		LOGGER.log(Level.INFO, "P6 Service Response_udfValues: " + response_udfValues.getStatus() + " : " + response_udfValues.getMsg());
+		HashMap<String, JSONObject> udfHashmap = udfValues.getValue1();
+
+		// ActivityCodeAssignments
+		Pair<P6ServiceResponse, HashMap<String, JSONObject>> activityCodeData = mapActivityCodeAssignments(session, dlService, env);
+		P6ServiceResponse response_codes = activityCodeData.getValue0();
+		LOGGER.log(Level.INFO, "P6 Service Response_codes: " + response_codes.getStatus() + " : " + response_codes.getMsg());
+		HashMap<String, JSONObject> codeHashmap = activityCodeData.getValue1();
+
+
+		// loop through all activity objects and add UDF and ActivityCode data
+		for (Object object : activityList) {
+		  JSONObject activityObject = (JSONObject) object;
+			int ObjectId = activityObject.getInt("ObjectId");
+			String ObjectIdString = Integer.toString(ObjectId);
+			// UDFValues
+			JSONObject udfObject = udfHashmap.get(ObjectIdString);
+			if (udfObject != null) {
+				// loop to iterate through the keys in the source JSONObject, and for each key, we use the put() method to add the key-value pair to the target JSONObject
+				for (String key : udfObject.keySet()) {
+            activityObject.put(key, udfObject.get(key));
+        }
+			}
+			// ActivityCodeAssignments
+			JSONObject codeObject = codeHashmap.get(ObjectIdString);
+			if (codeObject != null) {
+				// loop to iterate through the keys in the source JSONObject, and for each key, we use the put() method to add the key-value pair to the target JSONObject
+				for (String key : codeObject.keySet()) {
+            activityObject.put(key, codeObject.get(key));
+        }
+			}
+    }
 
 		// write json to file and import
 		writeJSONFile(activityList, fileName);
@@ -237,72 +267,97 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		return response;
 	}
 
-	public P6ServiceResponse mapActivityCodeAssignments(P6ServiceSession session, DeepLynxService dlService, Environment env) {
+	public Pair<P6ServiceResponse, HashMap<String, JSONObject>> mapActivityCodeAssignments(P6ServiceSession session, DeepLynxService dlService, Environment env) {
 		List<ActivityCodeAssignmentFieldType> fields = new ArrayList<ActivityCodeAssignmentFieldType>();
-		fields.add(ActivityCodeAssignmentFieldType.ACTIVITY_CODE_DESCRIPTION);
-		fields.add(ActivityCodeAssignmentFieldType.ACTIVITY_CODE_TYPE_NAME);
-		fields.add(ActivityCodeAssignmentFieldType.ACTIVITY_CODE_VALUE);
-		fields.add(ActivityCodeAssignmentFieldType.ACTIVITY_ID);
-		fields.add(ActivityCodeAssignmentFieldType.ACTIVITY_NAME);
-		fields.add(ActivityCodeAssignmentFieldType.PROJECT_ID);
-		fields.add(ActivityCodeAssignmentFieldType.ACTIVITY_CODE_OBJECT_ID);
-		fields.add(ActivityCodeAssignmentFieldType.LAST_UPDATE_DATE);
-
-		JSONArray activityCodeAssignmentList = new JSONArray();
-		List<String> activityCodeIDList = new ArrayList<String>();
-		for (ActivityCodeAssignment code : getActivityCodeAssignments(session, env.getProjectID(), fields)) {
-			// P6 doesn't give unique activity code assignment ids, but a given activity code can only be assigned to a given activty once
-			// unique id for DL typemapping
-			String activityCodeAssignmentId = code.getActivityId() + code.getActivityCodeObjectId();
-			activityCodeIDList.add(activityCodeAssignmentId);
-
-			JSONObject activityCodeAssignment = new JSONObject();
-			activityCodeAssignment.put("ActivityCodeDescription", code.getActivityCodeDescription());
-			activityCodeAssignment.put("ActivityCodeTypeName", code.getActivityCodeTypeName());
-			activityCodeAssignment.put("ActivityCodeValue", code.getActivityCodeValue());
-			activityCodeAssignment.put("ActivityId", code.getActivityId());
-			activityCodeAssignment.put("ActivityName", code.getActivityName());
-			activityCodeAssignment.put("ProjectId", code.getProjectId());
-			activityCodeAssignment.put("ActivityCodeObjectId", code.getActivityCodeObjectId());
-			activityCodeAssignment.put("ActivityCodeAssignmentId", activityCodeAssignmentId);
-			activityCodeAssignment.put("LastUpdateDate", translateDate(code.getLastUpdateDate().getValue()));
-
-			activityCodeAssignmentList.put(activityCodeAssignment);
+		for (ActivityCodeAssignmentFieldType fieldType : ActivityCodeAssignmentFieldType.values()) {
+	    fields.add(fieldType);
 		}
 
-		writeJSONFile(activityCodeAssignmentList, codesAssignmentsFileName);
-		File importFile = new File(codesAssignmentsFileName);
-		dlService.createManualImport(importFile);
-		// delete DL nodes that no longer exist in P6
-		dlService.deleteNodes(activityCodeIDList, "ActivityCode", "ActivityCodeAssignmentId");
+		// hashmap of activity object id's and the corresponding activityCodeAssignments
+		HashMap<String, JSONObject> hashMap = new HashMap<>();
+		JSONObject activityCodeAssignments;
+		JSONArray codeAssignmentList = new JSONArray();
+		for (ActivityCodeAssignment code : getActivityCodeAssignments(session, env.getProjectID(), fields)) {
+			Method[] methods = ActivityCodeAssignment.class.getMethods();
+			Boolean saveProjectObjectId = false;
+			try {
+				JSONObject codeValueData = genericP6DataGetter(code, methods, saveProjectObjectId);
+				codeAssignmentList.put(codeValueData);
+
+				int activityObjectId = codeValueData.getInt("ActivityObjectId");
+				String activityId = Integer.toString(activityObjectId);
+				String activityCodeTypeName = codeValueData.getString("ActivityCodeTypeName");
+				String activityCodeValue = codeValueData.getString("ActivityCodeValue");
+
+				// attempt to get JSONObject of ActivityCodeAssignments for given activityId
+				activityCodeAssignments = hashMap.get(activityId);
+				// if null, create the JSONObject and place in hashmap
+				if (activityCodeAssignments == null) {
+					activityCodeAssignments = new JSONObject();
+					hashMap.put(activityId, activityCodeAssignments);
+				}
+
+				activityCodeAssignments.put("ActivityCodeName_".concat(activityCodeTypeName), activityCodeValue);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+				LOGGER.log(Level.SEVERE, "mapActivityActivityCodeAssignments failed | " + e.toString());
+			}
+		}
+
+		// writeJSONFile(activityCodeAssignmentList, codesAssignmentsFileName);
+		// File importFile = new File(codesAssignmentsFileName);
+		// dlService.createManualImport(importFile);
+		// // delete DL nodes that no longer exist in P6
+		// dlService.deleteNodes(activityCodeIDList, "ActivityCode", "ActivityCodeAssignmentId");
 
 		// Check for errors and create response.
 		P6ServiceResponse response = useP6ServiceMessage(errors);
 
-		return response;
+		return Pair.with(response, hashMap);
 	}
 
-	public P6ServiceResponse mapActivityUDFValues(P6ServiceSession session, DeepLynxService dlService, Environment env, int projectObjectId) {
+	public Pair<P6ServiceResponse, HashMap<String, JSONObject>> mapActivityUDFValues(P6ServiceSession session, DeepLynxService dlService, Environment env, int projectObjectId) {
 		List<UDFValueFieldType> fields = new ArrayList<UDFValueFieldType>();
 		for (UDFValueFieldType fieldType : UDFValueFieldType.values()) {
 	    fields.add(fieldType);
 		}
 
+		// hashmap of activity object id's and the corresponding activityUDFValues
+		HashMap<String, JSONObject> hashMap = new HashMap<>();
+		JSONObject activityUDFValues;
 		JSONArray udfValueList = new JSONArray();
-		List<String> udfValueIDList = new ArrayList<String>();
 		for (UDFValue udf : getUDFValues(session, projectObjectId, fields)) {
 			Method[] methods = UDFValue.class.getMethods();
 			Boolean saveProjectObjectId = false;
 			try {
-				Pair<JSONObject, String> udfValueData = genericP6DataGetter(udf, methods, saveProjectObjectId);
-				// JSONObject udfValueObject = udfValueData.getValue0();
-				// String foreignObjectId = (String) udfValueObject.get("ForeignObjectId");
-				// String udfTypeObjectId = (String) udfValueObject.get("UDFTypeObjectId");
-				// String udfValueId = foreignObjectId + udfTypeObjectId;
-				// udfValueIDList.add(udfValueId);
-				// udfValueObject.put("UDFValueId", udfValueId);
-				udfValueList.put(udfValueData.getValue0());
-				udfValueIDList.add(udfValueData.getValue1());
+				JSONObject udfValueData = genericP6DataGetter(udf, methods, saveProjectObjectId);
+				udfValueList.put(udfValueData);
+
+				int foreignObjectId = udfValueData.getInt("ForeignObjectId");
+				String activityId = Integer.toString(foreignObjectId);
+				String udfTypeTitle = udfValueData.getString("UDFTypeTitle");
+				String typeSubject = udfValueData.getString("UDFTypeSubjectArea");
+				String udfDataType = udfValueData.getString("UDFTypeDataType");
+
+				// attempt to get JSONObject of UDFValues for given activityId
+				activityUDFValues = hashMap.get(activityId);
+				// if null, create the JSONObject and place in hashmap
+				if (activityUDFValues == null) {
+					activityUDFValues = new JSONObject();
+					hashMap.put(activityId, activityUDFValues);
+				}
+
+				// todo: currently supporting Text and Integer UDFTypeDataType's
+				if (typeSubject.equals("Activity")) {
+					if (udfDataType.equals("Text")) {
+						String value = udfValueData.getString("Text");
+						activityUDFValues.put("UDFValueName_".concat(udfTypeTitle), value);
+					} else if (udfDataType.equals("Integer")) {
+						int value = udfValueData.getInt("Integer");
+						activityUDFValues.put("UDFValueName_".concat(udfTypeTitle), value);
+					}
+				}
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -310,16 +365,16 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 			}
 		}
 
-		writeJSONFile(udfValueList, udfValuesFileName);
-		File importFile = new File(udfValuesFileName);
-		dlService.createManualImport(importFile);
-		// delete DL nodes that no longer exist in P6
-		dlService.deleteNodes(udfValueIDList, "UDFValue", "UDFValueId");
+		// writeJSONFile(udfValueList, udfValuesFileName);
+		// File importFile = new File(udfValuesFileName);
+		// dlService.createManualImport(importFile);
+		// // delete DL nodes that no longer exist in P6
+		// dlService.deleteNodes(udfValueIDList, "UDFValue", "UDFValueId");
 
 		// Check for errors and create response.
 		P6ServiceResponse response = useP6ServiceMessage(errors);
 
-		return response;
+		return Pair.with(response, hashMap);
 	}
 
 	// errors variable comes from ActivitiesWrapper

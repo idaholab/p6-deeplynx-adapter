@@ -48,7 +48,7 @@ public class Scheduler {
 					);
 					DeepLynxService deeplynx = new DeepLynxService(initialEnv);
 					deeplynx.authenticate();
-					// TODO: shouldn't need to get containerIds like this anymore - DL should send containerId to exchangeToken where it can be used in createServiceUser 
+					// TODO: shouldn't need to get containerIds like this anymore - DL should send containerId to exchangeToken where it can be used in createServiceUser
 					List<String> containerIds = deeplynx.getContainerIds();
 
 					// get datasource configs for a given url/key/secret + given container ids
@@ -74,6 +74,7 @@ public class Scheduler {
 							readActivitiesWrapper.importP6Data(env, 1);
 
 						} catch (Exception e) {
+							e.printStackTrace();
 						  LOGGER.log(Level.SEVERE, "Connection index j:" + j + " failed | " + e.toString());
 						}
 
