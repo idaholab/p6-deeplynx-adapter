@@ -1,6 +1,8 @@
 package com.example.p6;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
+import java.lang.reflect.ParameterizedType;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.io.File;
@@ -77,20 +79,11 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		P6ServiceResponse response_codes = mapActivityCodeAssignments(session, deeplynx, env);
 		LOGGER.log(Level.INFO, "P6 Service Response_codes: " + response_codes.getStatus() + " : " + response_codes.getMsg());
 
-		// could filter by projectObjectId or activityObjectIdList; projectObjectId makes more sense at the moment
 		P6ServiceResponse response_udfValues = mapActivityUDFValues(session, deeplynx, env, projectObjectId);
 		LOGGER.log(Level.INFO, "P6 Service Response_udfValues: " + response_udfValues.getStatus() + " : " + response_udfValues.getMsg());
-
-		// todo: may need to use CalendarService to get work hours per day (and maybe duration units..)
-		// CalendarService calendarService = service.getCalendarService();
-		// Project project = new Project();
-		// project.setId(projectId);
-		// Calendar calendar = calendarService.readProjectCalendar(project, null);
-		// int workHoursPerDay = calendar.getHoursPerDay();
-		// System.out.println("The work hours per day for the project are " + workHoursPerDay + " hours.");
 	}
 
-	// todo: look into using web services to get other necessary info like various units (duration, cost, etc.)
+	// todo: consider supporting web services (calendar and possibly others) to get other necessary info like various units (duration, cost, etc.)
 	// todo: check if there are differences between what the user sees in P6 and the names in the Activity Class - may need to use a service to translate or find/write a doc
 	// todo: possibly make use of getClass() - could make a generic mapClassInstances() method
 
@@ -100,33 +93,41 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 
 		try {
 			for (Method method : methods) {
+				Type returnType = method.getReturnType();
 				String methodName = method.getName();
 				if (methodName.startsWith("get")) {
 					String xmlElementName = methodName.replace("get", "");
 					// Invoke getter method
 					Object result = method.invoke(instance);
-
 					// handle the cases for all the Activity property data types that we plan on supporting
 					// and place in json payload
-					if (result instanceof String) {
+					if (result == null) {
+						datum.put(xmlElementName, "");
+						// datum.put(xmlElementName, JSONObject.NULL);
+					} else if (returnType.equals(String.class)) {
 						datum.put(xmlElementName, (String) result);
-					} else if (result instanceof Integer) {
+					} else if (returnType.equals(Integer.class)) {
 						datum.put(xmlElementName, (Integer) result);
-					} else if (result instanceof Double) {
+					} else if (returnType.equals(Double.class)) {
 						datum.put(xmlElementName, (Double) result);
-					} else if (result instanceof Boolean) {
-						// todo: need some test data for Boolean
+					} else if (returnType.equals(Boolean.class)) {
 						datum.put(xmlElementName, (Boolean) result);
-					} else if (result instanceof XMLGregorianCalendar) {
-						Date resultJAXBElement = translateDate((XMLGregorianCalendar) result);
-					} else if (result == null) {
-							// todo: see how many transformations this generates with and without this
-							// todo: this could be a user parameter
-							datum.put(xmlElementName, "");
-					} else if (result instanceof JAXBElement) {
+					} else if (returnType.equals(XMLGregorianCalendar.class)) {
+						String resultJAXBElement = translateDate((XMLGregorianCalendar) result);
+						datum.put(xmlElementName, resultJAXBElement);
+					}
+					else if (returnType.equals(JAXBElement.class)) {
 						// handle the JAXBElement's
 						Class<?> valueType = ((JAXBElement<?>) result).getDeclaredType();
-						if (valueType == Double.class) {
+						if (((JAXBElement<?>) result).getValue() == null) {
+							if (valueType == XMLGregorianCalendar.class) {
+								datum.put(xmlElementName, "");
+							} else if (valueType == Double.class) {
+								datum.put(xmlElementName, 0);
+							}
+							// datum.put(xmlElementName, JSONObject.NULL); // todo: this might be better but would require change in DeepLynx
+						}
+						else if (valueType == Double.class) {
 							Double resultJAXBElement = ((JAXBElement<Double>) result).getValue();
 							datum.put(xmlElementName, resultJAXBElement);
 						} else if (valueType == String.class) {
@@ -139,14 +140,15 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 							Boolean resultJAXBElement = ((JAXBElement<Boolean>) result).getValue();
 							datum.put(xmlElementName, resultJAXBElement);
 						} else if (valueType == XMLGregorianCalendar.class) {
-							Date resultJAXBElement = translateDate(((JAXBElement<XMLGregorianCalendar>) result).getValue());
+							String resultJAXBElement = translateDate(((JAXBElement<XMLGregorianCalendar>) result).getValue());
 							datum.put(xmlElementName, resultJAXBElement);
-						} else {
-							System.out.println("JAXBElement: ".concat(methodName));
 						}
+						// else {
+						// 	LOGGER.log(Level.WARNING, xmlElementName.concat(" data not currently supported"));
+						// }
 					}
 					// else {
-					// 	System.out.println(methodName); // getClass
+					// 	LOGGER.log(Level.WARNING, xmlElementName.concat(" data not currently supported"));
 					// }
 
 					// get Ids for later use
@@ -291,16 +293,14 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		for (UDFValue udf : getUDFValues(session, projectObjectId, fields)) {
 			Method[] methods = UDFValue.class.getMethods();
 			Boolean saveProjectObjectId = false;
-
 			try {
-				// todo: refactor udfValueId part
-				String foreignObjectId = Integer.toString(udf.getForeignObjectId());
-				String udfTypeObjectId = Integer.toString(udf.getUDFTypeObjectId());
-				String udfValueId = foreignObjectId + udfTypeObjectId;
-				udfValueIDList.add(udfValueId);
-				// udfValue.put("UDFValueId", udfValueId);
-
 				Pair<JSONObject, String> udfValueData = genericP6DataGetter(udf, methods, saveProjectObjectId);
+				// JSONObject udfValueObject = udfValueData.getValue0();
+				// String foreignObjectId = (String) udfValueObject.get("ForeignObjectId");
+				// String udfTypeObjectId = (String) udfValueObject.get("UDFTypeObjectId");
+				// String udfValueId = foreignObjectId + udfTypeObjectId;
+				// udfValueIDList.add(udfValueId);
+				// udfValueObject.put("UDFValueId", udfValueId);
 				udfValueList.put(udfValueData.getValue0());
 				udfValueIDList.add(udfValueData.getValue1());
 
@@ -370,37 +370,15 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		}
 	}
 
-	public static  Date translateDate(XMLGregorianCalendar date){
-	        return date == null ? null : date.toGregorianCalendar().getTime();
+	public static  String translateDate(XMLGregorianCalendar date){
+		String isoTimestamp = null;
+		try {
+			SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+			isoTimestamp = isoFormat.format(date.toGregorianCalendar().getTime());
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE,"translateDate failed: " + e.toString(), e);
+		}
+		return isoTimestamp;
 	}
-
-	// public static Date translateDate(String dateString){
-  //       GregorianCalendar calendar = (GregorianCalendar)GregorianCalendar.getInstance();
-  //       SimpleDateFormat sdf = new SimpleDateFormat();
-	//
-  //       try {
-  //           if (dateString != null){
-  //               if (dateString.matches("^(0[1-9]|1[012])/(0[1-9]|[12][0-9]|3[01])/(19|20)\\d\\d$")){
-  //                   sdf = new SimpleDateFormat("MM/dd/yyyy");
-  //               }
-  //               else if (dateString.matches("^(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])-(19|20)\\d\\d$")){
-  //                   sdf = new SimpleDateFormat("MM-dd-yyyy");
-  //               }
-  //               else if (dateString.matches("^(19|20)\\d\\d(0[1-9]|1[012])(0[1-9]|[12][0-9]|3[01])$")){
-  //                   sdf = new SimpleDateFormat("yyyyMMdd");
-  //               }
-  //               else if (dateString.matches("^(19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$")){
-  //                   sdf = new SimpleDateFormat("yyyy-MM-dd");
-  //               }
-	//
-  //               calendar.setTime(sdf.parse(dateString));
-  //           }
-  //       } catch (ParseException e) {
-	// 					LOGGER.log(Level.SEVERE,"translateDate failed: " + e.toString(), e);
-  //       } catch (Exception e) {
-	// 					LOGGER.log(Level.SEVERE,"translateDate failed: " + e.toString(), e);
-  //       }
-  //       return calendar.getTime();
-  //   }
 
 }
