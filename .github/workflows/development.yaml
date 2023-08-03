@@ -13,7 +13,6 @@ jobs:
         with:
           repository: Digital-Engineering/p6_deeplynx_adapter
           ref: development
-          token: ${{ secrets.GH_TOKEN }}
 
       - shell: bash
         name: Add Certificates
