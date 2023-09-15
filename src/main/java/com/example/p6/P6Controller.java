@@ -289,8 +289,9 @@ public class P6Controller {
 					ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
 					if (response.getStatusCode() == HttpStatus.OK) {
 							JSONObject resObject = new JSONObject(response.getBody());
+							// LOGGER.log(Level.INFO, resObject.toString());
 							// use long_token to create service user and then create service user key pair and store that in P6 db
-							String long_token = resObject.getString("value");
+							String long_token = resObject.getString("access_token");
 							String serviceUserId = createServiceUser(long_token, containerId);
 							setServiceUserPermissions(long_token, containerId, serviceUserId);
 							createServiceUserKeyPair(long_token, containerId, serviceUserId);
