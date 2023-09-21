@@ -211,7 +211,12 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 			if (udfObject != null) {
 				// loop to iterate through the keys in the source JSONObject, and for each key, we use the put() method to add the key-value pair to the target JSONObject
 				for (String key : udfObject.keySet()) {
-            activityObject.put(key, udfObject.get(key));
+					  // TODO: determine what characters are allowed in P6 but not DeepLynx typemapping
+						// replace " " and ":" characters with "_"
+						String safeKey = key.replaceAll("[\\s:]", "_");
+						// get rid of multiple consecutive "_"
+						String betterKey = safeKey.replaceAll("_+", "_");
+            activityObject.put(betterKey, udfObject.get(key));
         }
 			}
 			// ActivityCodeAssignments
@@ -219,7 +224,12 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 			if (codeObject != null) {
 				// loop to iterate through the keys in the source JSONObject, and for each key, we use the put() method to add the key-value pair to the target JSONObject
 				for (String key : codeObject.keySet()) {
-            activityObject.put(key, codeObject.get(key));
+						// TODO: determine what characters are allowed in P6 but not DeepLynx typemapping
+						// replace " " and ":" characters with "_"
+						String safeKey = key.replaceAll("[\\s:]", "_");
+						// get rid of multiple consecutive "_"
+						String betterKey = safeKey.replaceAll("_+", "_");
+            activityObject.put(betterKey, codeObject.get(key));
         }
 			}
     }
