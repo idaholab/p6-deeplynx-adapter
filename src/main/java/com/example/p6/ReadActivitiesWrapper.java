@@ -213,7 +213,7 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 				for (String key : udfObject.keySet()) {
 					  // TODO: determine what characters are allowed in P6 but not DeepLynx typemapping
 						// replace " " and ":" characters with "_"
-						String safeKey = key.replaceAll("[\\s:]", "_");
+						String safeKey = key.replaceAll("[\\s:#]", "_");
 						// get rid of multiple consecutive "_"
 						String betterKey = safeKey.replaceAll("_+", "_");
             activityObject.put(betterKey, udfObject.get(key));
@@ -226,7 +226,7 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 				for (String key : codeObject.keySet()) {
 						// TODO: determine what characters are allowed in P6 but not DeepLynx typemapping
 						// replace " " and ":" characters with "_"
-						String safeKey = key.replaceAll("[\\s:]", "_");
+						String safeKey = key.replaceAll("[\\s:#]", "_");
 						// get rid of multiple consecutive "_"
 						String betterKey = safeKey.replaceAll("_+", "_");
             activityObject.put(betterKey, codeObject.get(key));
