@@ -2,29 +2,16 @@ package com.example.p6;
 
 import org.json.*;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.HashMap;
+
+import org.springframework.http.*;
+import org.springframework.web.client.*;
+import java.util.*;
 
 public class DeepLynxService {
 
@@ -44,37 +31,82 @@ public class DeepLynxService {
 		this.env = env;
 	}
 
+	private String restExchange(String path, HttpMethod method, HttpHeaders headers, Optional<String> body) {
+			try {
+					// add authentication header if present
+					if (this.token != null) {
+							headers.set("Authorization", "Bearer " + this.getToken());
+					}
+					HttpEntity<String> requestEntity;
+					// create requestEntity based on conditions
+					if (method == HttpMethod.POST && body.isPresent()) {
+							headers.set("Content-Type", "application/json; charset=UTF-8");
+							headers.set("Accept", "application/json");
+							requestEntity = new HttpEntity<String>(body.get(), headers);
+					} else {
+							requestEntity = new HttpEntity<String>(headers);
+					}
+
+					RestTemplate restTemplate = new RestTemplate();
+					ResponseEntity<String> response = restTemplate.exchange(
+							path,
+							method,
+							requestEntity,
+							String.class
+					);
+
+					if (response.getStatusCode() == HttpStatus.OK) {
+							String responseBody = response.getBody();
+							return responseBody;
+					} else {
+							// Handle non-OK status codes gracefully
+							throw new HttpClientErrorException(response.getStatusCode(),
+											"Error: " + response.getStatusCodeValue() + " - " + response.getBody());
+					}
+			} catch (HttpClientErrorException e) {
+					// Handle HTTP client errors (4xx) separately
+					LOGGER.log(Level.SEVERE, "HTTP client error: " + e.getStatusCode() + " - " + e.getResponseBodyAsString(), e);
+					throw e; // Re-throw the exception to let the caller handle it
+			} catch (HttpServerErrorException e) {
+					// Handle HTTP server errors (5xx) separately if needed
+					LOGGER.log(Level.SEVERE, "HTTP server error: " + e.getStatusCode() + " - " + e.getResponseBodyAsString(), e);
+					throw e; // Re-throw the exception to let the caller handle it
+			} catch (RestClientException e) {
+					// Handle other REST client exceptions (e.g., network issues)
+					LOGGER.log(Level.SEVERE, "RestTemplate exchange failed: " + e.getMessage(), e);
+					throw e; // Re-throw the exception to let the caller handle it
+			}
+	}
+
 	public void authenticate() {
-		String path = env.getDeepLynxURL() + "/oauth/token";
-
-		// supply api keys and expiry via hashmap
-		HashMap<String, String> headers = new HashMap<String, String>();
-		headers.put("x-api-key", env.getApiKey());
-		headers.put("x-api-secret", env.getApiSecret());
-		// TODO: rethink hardcoding expiry
-		headers.put("x-api-expiry", "12h");
-
-		try {
-					String token = this.makeHTTPRequest(path, "GET", null, headers);
-					token = token.replace("\"", "");
-					this.setToken(token);
-			} catch(Exception e) {
-					LOGGER.log(Level.SEVERE, "DeepLynxService.authenticate() failed: " + e.toString());
+			String path = env.getDeepLynxURL() + "/oauth/token";
+			HttpHeaders headers = new HttpHeaders();
+			headers.set("x-api-key", env.getApiKey());
+			headers.set("x-api-secret", env.getApiSecret());
+			headers.set("x-api-expiry", "12h");
+			try {
+				String token = restExchange(path, HttpMethod.GET, headers, Optional.empty());
+				// remove quotes on response string..
+				token = token.replace("\"", "");
+				this.setToken(token);
+			} catch (Exception e) {
+					LOGGER.log(Level.SEVERE,"exchange failed: " + e.getMessage(), e);
 			}
 	}
 
 	public List<String> getContainerIds() {
-		String path = env.getDeepLynxURL() + "/containers";
-		List<String> containerIds = new ArrayList<String>();
-
-		try {
-					String containers = this.makeHTTPRequest(path, "GET", null, null);
-					JSONObject obj = new JSONObject(containers);
+			String path = env.getDeepLynxURL() + "/containers";
+			List<String> containerIds = new ArrayList<>();
+			// no headers yet, but Bearer token will be added in restExchange; is this dumb..?
+			HttpHeaders headers = new HttpHeaders();
+			try {
+					String response = restExchange(path, HttpMethod.GET, headers, Optional.empty());
+					JSONObject obj = new JSONObject(response);
 					JSONArray data = obj.getJSONArray("value");
 					for (int i = 0; i < data.length(); i++) {
-						containerIds.add(data.getJSONObject(i).getString("id"));
+							containerIds.add(data.getJSONObject(i).getString("id"));
 					}
-			} catch(Exception e) {
+			} catch (Exception e) {
 					LOGGER.log(Level.SEVERE, "DeepLynxService.getContainerIds() failed: " + e.toString());
 			}
 
@@ -87,8 +119,9 @@ public class DeepLynxService {
 		for (int i = 0; i < containerIds.size(); i++) {
 			String containerId = containerIds.get(i);
 			String path = env.getDeepLynxURL() + "/containers/" + containerId + "/import/datasources?decrypted=true";
+			HttpHeaders headers = new HttpHeaders();
 			try {
-						String datasources = this.makeHTTPRequest(path, "GET", null, null);
+						String datasources = restExchange(path, HttpMethod.GET, headers, Optional.empty());
 						JSONObject obj = new JSONObject(datasources);
 						JSONArray data = obj.getJSONArray("value");
 						for (int j = 0; j < data.length(); j++) {
@@ -116,10 +149,12 @@ public class DeepLynxService {
 			return configMapList;
 	}
 
-	public void createManualImport(File importFile) {
+	public void createManualImport(String importBody) {
 		try {
 				String path = env.getDeepLynxURL() + "/containers/" + env.getContainerId() + "/import/datasources/" + env.getDataSourceId() + "/imports";
-				JSONObject obj = this.makeHTTPFileRequest(path, importFile);
+				HttpHeaders headers = new HttpHeaders();
+				String response = restExchange(path, HttpMethod.POST, headers, Optional.of(importBody));
+				JSONObject obj = new JSONObject(response);
 				boolean isError = obj.getBoolean("isError");
 				if (isError) {
 					LOGGER.log(Level.SEVERE, "Error with manual import call");
@@ -131,13 +166,17 @@ public class DeepLynxService {
 			}
 	}
 
+	// TODO: add better success response
 	public void deleteNodes(List<String> p6Ids, String metatype, String nodeIdName) {
 		// query
 		String urlQuery = env.getDeepLynxURL() + "/containers/" + env.getContainerId() + "/data";
 		// TODO: now this code is typemapping dependent..
 		// adding params for the two typemapping variables makes this slightly better, still need to discuss
 		String body = "{\"query\":\"{\\r\\n    metatypes{\\r\\n        " + metatype + "(\\r\\n            ProjectId: {operator: \\\"eq\\\", value :\\\"" + env.getProjectID() + "\\\"}\\r\\n            _record: {data_source_id: {operator: \\\"eq\\\", value:\\\"" + env.getDataSourceId() + "\\\"}}\\r\\n        ) {\\r\\n            " + nodeIdName + "\\r\\n            _deep_lynx_id\\r\\n        }\\r\\n    }\\r\\n}\\r\\n\",\"variables\":{}}";
-		JSONObject queryObj = new JSONObject(this.makeHTTPRequest(urlQuery, "POST", body, null));
+		HttpHeaders queryHeaders = new HttpHeaders();
+		String queryResponse = restExchange(urlQuery, HttpMethod.POST, queryHeaders, Optional.of(body));
+		// System.out.println(queryResponse);
+		JSONObject queryObj = new JSONObject(queryResponse);
 		try {
 				if (queryObj.has("data")) {
 					JSONArray queryData = queryObj.getJSONObject("data").getJSONObject("metatypes").getJSONArray(metatype);
@@ -157,7 +196,9 @@ public class DeepLynxService {
 						 try {
 								 LOGGER.log(Level.INFO, "deleteNodes will delete DL nodeId: " + nodeId);
 								 urlDelete = env.getDeepLynxURL() + "/containers/" + env.getContainerId() + "/graphs/nodes/" + nodeId;
-								 this.makeHTTPRequest(urlDelete, "DELETE", null, null);
+								 HttpHeaders deleteHeaders = new HttpHeaders();
+						 		 String deleteResponse = restExchange(urlDelete, HttpMethod.DELETE, deleteHeaders, Optional.empty());
+								 System.out.println(deleteResponse);
 						 } catch(Exception e) {
 								 LOGGER.log(Level.SEVERE, "deleteNodes failed on DL nodeId: " + nodeId + " with error: " + e.toString());
 						 }
@@ -171,134 +212,4 @@ public class DeepLynxService {
 				LOGGER.log(Level.SEVERE, "deleteNodes failed: " + e.toString());
 		}
 	}
-
-	public String makeHTTPRequest(String path, String method, String body, HashMap<String, String> headers) {
-		URL url;
-		HttpURLConnection con;
-		try {
-			url = new URL(path);
-			con = (HttpURLConnection) url.openConnection();
-			con.setRequestMethod(method);
-
-			// add authentication header if present
-			if (this.token != null) {
-				con.setRequestProperty("Authorization", "Bearer " + this.getToken());
-			}
-
-			// add user-defined headers following key value pairs
-			if (headers != null && headers.size() > 0) {
-				for (String i : headers.keySet()) {
-					con.setRequestProperty(i, headers.get(i));
-				}
-			}
-
-			if (method.equals("POST")) {
-				con.setDoOutput(true);
-				con.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
-				con.setRequestProperty("Accept", "application/json");
-
-				con.connect();
-				try(OutputStream os = con.getOutputStream()) {
-				    byte[] input = body.getBytes(StandardCharsets.UTF_8);
-				    os.write(input, 0, input.length);
-				}
-			}
-
-			int status = con.getResponseCode();
-			LOGGER.log(Level.INFO, path + " status: " + status);
-			// If response code != 2XX, return null and handle accordingly
-			if (!Integer.toString(status).matches("^2\\S*")) {
-				LOGGER.log(Level.SEVERE, "Error with API call");
-				return null;
-			}
-
-			BufferedReader in = new BufferedReader(
-			  new InputStreamReader(con.getInputStream()));
-			String inputLine;
-			StringBuffer content = new StringBuffer();
-			while ((inputLine = in.readLine()) != null) {
-			    content.append(inputLine);
-			}
-			in.close();
-			con.disconnect();
-
-			return content.toString();
-
-		} catch (MalformedURLException e) {
-			LOGGER.log(Level.SEVERE,"makeHTTPRequest failed: " + e.toString(), e);
-		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE,"makeHTTPRequest failed: " + e.toString(), e);
-		} catch (Exception e) {
-			LOGGER.log(Level.SEVERE,"makeHTTPRequest failed: " + e.toString(), e);
-		}
-		return null;
-	}
-
-	public JSONObject makeHTTPFileRequest(String path, File myFile) {
-		URL url;
-		HttpURLConnection con;
-		try {
-			String CRLF = "\r\n";
-			String charset = "UTF-8";
-
-			url = new URL(path);
-			con = (HttpURLConnection) url.openConnection();
-
-			con.setDoOutput(true);
-			String boundary = UUID.randomUUID().toString();
-			con.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + boundary);
-			// add authentication header if present
-			if (token != null) {
-				con.setRequestProperty("Authorization", "Bearer " + getToken());
-			}
-
-			OutputStream output = con.getOutputStream();
-			PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, charset), true);
-
-			// https://stackoverflow.com/questions/2793150/how-to-use-java-net-urlconnection-to-fire-and-handle-http-requests
-			// Send text file.
-	    writer.append("--" + boundary).append(CRLF);
-	    writer.append("Content-Disposition: form-data; name=\"myFile\"; filename=\"" + myFile.getName() + "\"").append(CRLF);
-			// Text file itself must be saved in this charset!
-			writer.append("Content-Type: application/json; charset=" + charset).append(CRLF);
-	    writer.append(CRLF).flush();
-	    Files.copy(myFile.toPath(), output);
-			// Important before continuing with writer!
-	    output.flush();
-			// CRLF is important! It indicates end of boundary.
-	    writer.append(CRLF).flush();
-	    // End of multipart/form-data.
-	    writer.append("--" + boundary + "--").append(CRLF).flush();
-
-			int status = con.getResponseCode();
-			LOGGER.log(Level.INFO, path + " status: " + status);
-			// If response code != 2XX, return null and handle accordingly
-			if (!Integer.toString(status).matches("^2\\S*")) {
-				LOGGER.log(Level.SEVERE, "Error with API call");
-				return null;
-			}
-
-			BufferedReader in = new BufferedReader(
-			  new InputStreamReader(con.getInputStream()));
-			String inputLine;
-			StringBuffer content = new StringBuffer();
-			while ((inputLine = in.readLine()) != null) {
-			    content.append(inputLine);
-			}
-			in.close();
-			con.disconnect();
-
-			JSONObject obj = new JSONObject(content.toString());
-			return obj;
-
-		} catch (MalformedURLException e) {
-			LOGGER.log(Level.SEVERE,"makeHTTPFileRequest failed: " + e.toString(), e);
-		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE,"makeHTTPFileRequest failed: " + e.toString(), e);
-		} catch (Exception e) {
-			LOGGER.log(Level.SEVERE,"makeHTTPFileRequest failed: " + e.toString(), e);
-		}
-		return null;
-	}
-
 }

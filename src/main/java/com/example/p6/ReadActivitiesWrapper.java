@@ -234,10 +234,11 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 			}
     }
 
-		// write json to file and import
+		// write json to file
 		writeJSONFile(activityList, fileName);
-		File importFile = new File(fileName);
-		dlService.createManualImport(importFile);
+		// import
+		dlService.createManualImport(activityList.toString());
+
 		// delete DL nodes that no longer exist in P6
 		dlService.deleteNodes(activityIDList, "Activity", "Id");
 
@@ -267,9 +268,9 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 			relationshipList.put(relationship);
 		}
 
+
 		writeJSONFile(relationshipList, relsFileName);
-		File importFile = new File(relsFileName);
-		dlService.createManualImport(importFile);
+		dlService.createManualImport(relationshipList.toString());
 
 		// Check for errors and create response.
 		P6ServiceResponse response = useP6ServiceMessage(errors);
@@ -314,12 +315,6 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 				LOGGER.log(Level.SEVERE, "mapActivityActivityCodeAssignments failed | " + e.toString());
 			}
 		}
-
-		// writeJSONFile(activityCodeAssignmentList, codesAssignmentsFileName);
-		// File importFile = new File(codesAssignmentsFileName);
-		// dlService.createManualImport(importFile);
-		// // delete DL nodes that no longer exist in P6
-		// dlService.deleteNodes(activityCodeIDList, "ActivityCode", "ActivityCodeAssignmentId");
 
 		// Check for errors and create response.
 		P6ServiceResponse response = useP6ServiceMessage(errors);
@@ -374,12 +369,6 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 				LOGGER.log(Level.SEVERE, "mapActivityUDFValues failed | " + e.toString());
 			}
 		}
-
-		// writeJSONFile(udfValueList, udfValuesFileName);
-		// File importFile = new File(udfValuesFileName);
-		// dlService.createManualImport(importFile);
-		// // delete DL nodes that no longer exist in P6
-		// dlService.deleteNodes(udfValueIDList, "UDFValue", "UDFValueId");
 
 		// Check for errors and create response.
 		P6ServiceResponse response = useP6ServiceMessage(errors);
