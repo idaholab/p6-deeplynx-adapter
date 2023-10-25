@@ -291,7 +291,12 @@ public class P6Controller {
 							JSONObject resObject = new JSONObject(response.getBody());
 							// LOGGER.log(Level.INFO, resObject.toString());
 							// use long_token to create service user and then create service user key pair and store that in P6 db
-							String long_token = resObject.getString("access_token");
+							String long_token = null;
+							if (resObject.has("access_token")) {
+							    long_token = resObject.getString("access_token");
+							} else if (resObject.has("value")) {
+							    long_token = resObject.getString("value");
+							}
 							String serviceUserId = createServiceUser(long_token, containerId);
 							setServiceUserPermissions(long_token, containerId, serviceUserId);
 							createServiceUserKeyPair(long_token, containerId, serviceUserId);
