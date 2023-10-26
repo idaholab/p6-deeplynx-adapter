@@ -1,89 +1,49 @@
 # P6 Deep Lynx Adapter
 
-This repo is a Deep Lynx adapter for [Primavera P6](https://www.oracle.com/industries/construction-engineering/primavera-p6/). It synchronizes cost, scheduling, and resource data between projects in P6 to containers in Deep Lynx. Learn more about Deep Lynx [here](https://github.com/idaholab/Deep-Lynx/wiki)
+This repo is a Deep Lynx adapter for [Primavera P6](https://www.oracle.com/industries/construction-engineering/primavera-p6/). It synchronizes cost, scheduling, and resource data between projects in P6 to containers in Deep Lynx. Learn more about Deep Lynx [here](https://github.com/idaholab/Deep-Lynx/wiki).
 
 ## Instructions for Deployment
 ### System requirements
-[Docker](https://docs.docker.com/get-docker/) and [`compose`](https://docs.docker.com/compose/)
+[Docker](https://docs.docker.com/get-docker/) and [`compose`](https://docs.docker.com/compose/).
 
 ### P6 Environment
-This adapter is designed to extract data from a given Primavera P6 EPPM database which has had web services enabled. Instructions on how to enable web services can be found [here](https://docs.oracle.com/cd/F37125_01/English/Integration_Documentation/p6_eppm_web_services_programming/helpmain.htm?toc.htm?34309.htm)
+This adapter is designed to extract data from a given Primavera P6 EPPM database which has had web services enabled. Instructions on how to enable web services can be found [here](https://docs.oracle.com/cd/F37125_01/English/Integration_Documentation/p6_eppm_web_services_programming/helpmain.htm?toc.htm?34309.htm).
 
 ### Configuration
 In development
-- change the file `.env-sample` to `.env`
-- set the variable `P6_ADAPTER_PORT` to any four-digit port value not allocated by the host
-- [generate a 128-bit](https://www.ibm.com/docs/en/imdm/12.0?topic=encryption-generating-aes-keys-password) key and assign it to the `P6_ENCRYPTION_KEY` variable
-- set the variables `P6_HOSTNAME` and `P6_IP_ADDRESS` if you know the values for the given P6 database that you would like to connect to, otherwise contact the developers for those values
-- set the value for the variable `P6_DB_LOC` (the value set in .env-sample works well)
+- change the file `.env-sample` to `.env`.
+- set the variable `P6_ADAPTER_PORT` to any four-digit port value not allocated by the host (the value set in .env-sample works well).
+- set the variable `P6_ADAPTER_URL` to the address where the adapter is hosted (the value set in .env-sample works well).
+- set the value for the variable `P6_DB_LOC` (the value set in .env-sample works well).
+- [generate a 128-bit](https://www.ibm.com/docs/en/imdm/12.0?topic=encryption-generating-aes-keys-password) key and assign it to the `P6_ENCRYPTION_KEY` variable.
+- set the variables `P6_HOSTNAME` and `P6_IP_ADDRESS` if you know the values for the given P6 database that you would like to connect to, otherwise contact the developers for those values.
+- set the variable `DL_URL` to the DeepLynx address that you wish to connect to.
+- `DL_URL_INTERNAL`: if you are running DeepLynx locally, this needs to be set to `http://host.docker.internal:8090`; otherwise this should be set to `DL_URL`.
+- Create a [DeepLynx OAuth app](https://github.com/idaholab/Deep-Lynx/wiki/DeepLynx-Enabled-OAuth-Application) and uses the generated key and secret to set `DL_APP_ID` and `DL_APP_SECRET`.
+
 
 In production
-- set the `P6_ADAPTER_PORT`, `P6_ENCRYPTION_KEY`, `P6_HOSTNAME`, `P6_IP_ADDRESS`, and `P6_DB_LOC` environment variables in the resource or pipeline through which the service is deployed
+- set the `P6_ADAPTER_PORT`, `P6_ADAPTER_URL`, `P6_DB_LOC`, `P6_ENCRYPTION_KEY`, `P6_HOSTNAME`, `P6_IP_ADDRESS`, `DL_URL`, `DL_URL_INTERNAL`, `DL_APP_ID`, and `DL_APP_SECRET` environment variables in the resource or pipeline through which the service is deployed.
+
+#### Adapter Interval
+The time interval that the adapter runs on can be adjusted with `fixed-rate.in.milliseconds` in `src\main\resources\application.properties`.
 
 ### Running
-Once Docker and `compose` are installed and configuration variables are set, launch `docker-compose build` then `docker-compose up`. The service should be accessible on the port you've specified
+Once Docker and `compose` are installed and configuration variables are set, launch `docker-compose build` then `docker-compose up`. The service should be accessible on the port you've specified.
 
 ### Use
-The following endpoints will be used to interact with the adapter:
+To use the adapter, a P6 data source should be created in DeepLynx.
+![image](https://media.github.inl.gov/user/13/files/702b2d05-8183-4ad7-89ee-abf17550558f)
 
-<table>
-    <tr>
-        <th>Endpoint</th><th>Method</th><th>Payload</th><th>Response</th>
-    </tr>
-    <tr>
-        <td>/health</td><td>GET</td><td>(none)</td><td><pre>200 "OK"</pre></td>
-    </tr>
-    <tr>
-        <td>/status</td><td>GET</td><td>(none)</td><td>
-            <pre>{
-    "connectionActive": "true|false"
-}</pre>
-        </td>
-    </tr>
-    <tr>
-        <td>/configure</td><td>POST</td><td>
-            <pre>{
-    "deepLynxURL": "https://STRING.com",
-    "deepLynxContainerId": "STRING",
-    "deepLynxDatasourceId": "STRING",
-    "deepLynxApiKey": "STRING",
-    "deepLynxApiSecret": "STRING",
-    "p6URL": "https://STRING.com",
-    "p6Project": "STRING",
-    "p6Username": "STRING",
-    "p6Password": "STRING"
-}</pre>
-        </td><td>
-            <pre>{
-    "sql_migration_success": "true|false",
-    "sql_configuration_success": "true|false"
-}</pre>
-        </td>
-    </tr>
-    <tr>
-        <td>/update</td><td>POST</td><td>
-            <pre>{
-    "deepLynxURL": "https://STRING.com",
-    "deepLynxContainerId": "STRING",
-    "deepLynxDatasourceId": "STRING",
-    "deepLynxApiKey": "STRING",
-    "deepLynxApiSecret": "STRING",
-    "p6URL": "https://STRING.com",
-    "p6Project": "STRING",
-    "p6Username": "STRING",
-    "p6Password": "STRING"
-}</pre>
-        </td><td>
-            <pre>{
-    "sql_migration_success": "true|false",
-    "sql_configuration_success": "true|false"
-}</pre>
-        </td>
-    </tr>
+The following fields should be entered when creating this data source:
+- `Endpoint` should look like this `http://p6-prd1-mw12c.inel.gov:8206/p6ws/services/`; the exact address and port will depend on where your P6 web services are hosted.
+- `Project ID` is the Id for P6 project that you wish to connect to; it will be similar to this `SUFO.N-Z.23`.
+- `Username` and `Password` are your P6 credentials which need `read` access to the P6 project that you entered in `Project ID`.
 
-<table>
+The adapter also needs to be authorized either through your DeepLynx container's UI, or by going to the following address in your browser `P6_ADAPTER_URL`+`/redirect/`+ your DeepLynx container ID (`http://localhost:8181/redirect/154` for example).
 
-Once valid configuration data has been passed into the adapter through the `/configure` endpoint, the adapter will start syncing data between the P6 project and the Deep Lynx container specified on a regular interval
+### Developer Endpoints
+There are several P6 adapter endpoints defined in `P6Controller.java` that developers may find useful for interacting with the adapter.
     
 ### Interval Import Logic
 - On some fixed rate interval, the adapter connects to the sqlite database p6.db
