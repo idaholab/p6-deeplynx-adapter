@@ -2,7 +2,6 @@ package com.example.p6;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -10,19 +9,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.List;
 
-// @Configuration
-// @EnableScheduling
 @Component
 public class Scheduler {
 
 	private static final Logger LOGGER = Logger.getLogger( Logger.GLOBAL_LOGGER_NAME );
 
-	// @Value("${fixed-rate.in.milliseconds}")
-  //   private static final long interval;
-
-	// @Scheduled(fixedRate = Scheduler.interval)
-	// @Scheduled(fixedRate = 3600000)
-	@Scheduled(fixedRate = 86400000)
+	@Scheduled(fixedRateString = "${fixed-rate.in.milliseconds}") // value comes from application.properties
 	public void adapterLoop() {
 		System.out.println("tick");
 

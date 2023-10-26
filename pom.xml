@@ -215,6 +215,14 @@
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
 		</plugins>
+		<resources>
+			<resource>
+				<directory>main/resources</directory>
+				<includes>
+					<include>**/*.properties</include>                  
+				</includes>
+			</resource>
+		</resources>
 	</build>
 
 </project>
