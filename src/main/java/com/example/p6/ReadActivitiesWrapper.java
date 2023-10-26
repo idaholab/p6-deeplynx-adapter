@@ -31,6 +31,7 @@ import org.javatuples.Pair;
 import com.primavera.ws.p6.activity.Activity;
 import com.primavera.ws.p6.activity.ActivityFieldType;
 import com.primavera.ws.p6.relationship.RelationshipFieldType;
+import com.primavera.ws.p6.wbs.WBSFieldType;
 import com.primavera.ws.p6.activitycode.ActivityCodeFieldType;
 import com.primavera.ws.p6.activitycodeassignment.ActivityCodeAssignment;
 import com.primavera.ws.p6.activitycodeassignment.ActivityCodeAssignmentFieldType;
@@ -46,8 +47,7 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 
 	private final String fileName = "/var/app/sqlite/import.json";
 	private final String relsFileName = "/var/app/sqlite/import_rels.json";
-	private final String codesAssignmentsFileName = "/var/app/sqlite/import_code_assignments.json";
-	private final String udfValuesFileName = "/var/app/sqlite/import_udf_values.json";
+	private final String wbsFileName = "/var/app/sqlite/import_wbs.json";
 
 	// todo: could make getting this a little better
 	private Integer projectObjectId;
@@ -78,11 +78,8 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		P6ServiceResponse response_rels = mapRelationships(session, deeplynx, env, projectObjectId);
 		LOGGER.log(Level.INFO, "P6 Service Response_rels: " + response_rels.getStatus() + " : " + response_rels.getMsg());
 
-		// P6ServiceResponse response_codes = mapActivityCodeAssignments(session, deeplynx, env);
-		// LOGGER.log(Level.INFO, "P6 Service Response_codes: " + response_codes.getStatus() + " : " + response_codes.getMsg());
-
-		// P6ServiceResponse response_udfValues = mapActivityUDFValues(session, deeplynx, env, projectObjectId).getValue0();
-		// LOGGER.log(Level.INFO, "P6 Service Response_udfValues: " + response_udfValues.getStatus() + " : " + response_udfValues.getMsg());
+		P6ServiceResponse response_wbs = mapWBS(session, deeplynx, env);
+		LOGGER.log(Level.INFO, "P6 Service Response_wbs: " + response_wbs.getStatus() + " : " + response_wbs.getMsg());
 	}
 
 	private JSONObject genericP6DataGetter (Object instance, Method[] methods, Boolean getProjectObjectId) {
@@ -211,7 +208,6 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 			if (udfObject != null) {
 				// loop to iterate through the keys in the source JSONObject, and for each key, we use the put() method to add the key-value pair to the target JSONObject
 				for (String key : udfObject.keySet()) {
-					  // TODO: determine what characters are allowed in P6 but not DeepLynx typemapping
 						// replace " " and ":" characters with "_"
 						String safeKey = key.replaceAll("[\\s:#]", "_");
 						// get rid of multiple consecutive "_"
@@ -224,7 +220,6 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 			if (codeObject != null) {
 				// loop to iterate through the keys in the source JSONObject, and for each key, we use the put() method to add the key-value pair to the target JSONObject
 				for (String key : codeObject.keySet()) {
-						// TODO: determine what characters are allowed in P6 but not DeepLynx typemapping
 						// replace " " and ":" characters with "_"
 						String safeKey = key.replaceAll("[\\s:#]", "_");
 						// get rid of multiple consecutive "_"
@@ -268,8 +263,45 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 			relationshipList.put(relationship);
 		}
 
-
 		writeJSONFile(relationshipList, relsFileName);
+		dlService.createManualImport(relationshipList.toString());
+
+		// Check for errors and create response.
+		P6ServiceResponse response = useP6ServiceMessage(errors);
+
+		return response;
+	}
+
+	private P6ServiceResponse mapWBS(P6ServiceSession session, DeepLynxService dlService, Environment env) {
+
+		List<WBSFieldType> fields = new ArrayList<WBSFieldType>();
+		fields.add(WBSFieldType.CODE);
+		fields.add(WBSFieldType.NAME);
+		fields.add(WBSFieldType.OBJECT_ID);
+		fields.add(WBSFieldType.PROJECT_ID);
+		fields.add(WBSFieldType.PROJECT_OBJECT_ID);
+		fields.add(WBSFieldType.OBS_NAME);
+		fields.add(WBSFieldType.OBS_OBJECT_ID);
+		fields.add(WBSFieldType.PARENT_OBJECT_ID);
+		fields.add(WBSFieldType.SEQUENCE_NUMBER);
+
+		JSONArray projectWBSList = new JSONArray();
+
+		for (com.primavera.ws.p6.wbs.WBS wbs : getWBS(session, env.getProjectID(), fields)) {
+			JSONObject projectWBS = new JSONObject();
+			projectWBS.put("Code", wbs.getCode());
+			projectWBS.put("Name", wbs.getName());
+			projectWBS.put("ObjectId", wbs.getObjectId());
+			projectWBS.put("ProjectId", wbs.getProjectId());
+			projectWBS.put("ProjectObjectId", wbs.getProjectObjectId());
+			projectWBS.put("OBSName", wbs.getOBSName());
+			projectWBS.put("OBSObjectId", wbs.getOBSObjectId());
+			projectWBS.put("ParentObjectId", wbs.getParentObjectId().getValue());
+			projectWBS.put("SequenceNumber", wbs.getSequenceNumber());
+			projectWBSList.put(projectWBS);
+		}
+
+		writeJSONFile(projectWBSList, wbsFileName);
 		dlService.createManualImport(relationshipList.toString());
 
 		// Check for errors and create response.

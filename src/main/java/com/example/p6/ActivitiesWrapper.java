@@ -20,6 +20,10 @@ import com.primavera.ws.p6.relationship.RelationshipFieldType;
 import com.primavera.ws.p6.relationship.RelationshipPortType;
 import com.primavera.ws.p6.relationship.RelationshipService;
 
+import com.primavera.ws.p6.wbs.WBSFieldType;
+import com.primavera.ws.p6.wbs.WBSPortType;
+import com.primavera.ws.p6.wbs.WBSService;
+
 import com.primavera.ws.p6.activitycode.*;
 import com.primavera.ws.p6.activitycodetype.*;
 import com.primavera.ws.p6.activitycodeassignment.*;
@@ -86,7 +90,7 @@ public class ActivitiesWrapper {
         List<com.primavera.ws.p6.relationship.Relationship> results = null;
 
         try {
-            results = servicePort.readRelationships(returnParams,"SuccessorProjectObjectId='" + projectObjectID + "'", null);
+            results = servicePort.readRelationships(returnParams,"SuccessorProjectObjectId='" + projectObjectID + "'", null, null);
         } catch (com.primavera.ws.p6.relationship.IntegrationFault e) {
             LOGGER.log(Level.SEVERE, "getRelationships failed: " + e.toString());
         } catch(Exception e) {
@@ -95,6 +99,38 @@ public class ActivitiesWrapper {
 
         return results;
       }
+
+      protected List<com.primavera.ws.p6.wbs.WBS> getWBS(P6ServiceSession session, String projectID, List<WBSFieldType> returnParams){
+            String url = session.getP6url() + "WBSService?wsdl";
+            URL wsdlURL = null;
+
+            try {
+                wsdlURL = new URL(url);
+            } catch (MalformedURLException e) {
+                addError(P6ServiceMessage.MessageType.APPLICATION, "Error creating URL for WBSService.  URL: " + url + " \nMalformedURLException thrown: " + e.getMessage());
+                LOGGER.log(Level.SEVERE, "getWBS wsdlURL failed: " + e.toString());
+            } catch(Exception e) {
+                LOGGER.log(Level.SEVERE, "getWBS wsdlURL failed: " + e.toString());
+            }
+
+            WBSService service = new WBSService(wsdlURL);
+            WBSPortType servicePort = service.getWBSPort();
+            session.setUserNameToken((BindingProvider)servicePort);
+
+            List<com.primavera.ws.p6.wbs.WBS> results = null;
+
+            try {
+                // results = servicePort.readWBS(returnParams, null, null);
+                results = servicePort.readWBS(returnParams,"ProjectId='" + projectID + "'", null);
+                // results = servicePort.readWBS(returnParams,"Name='National Reactor Innovation Center (NRIC)'", null);
+            } catch (com.primavera.ws.p6.wbs.IntegrationFault e) {
+                LOGGER.log(Level.SEVERE, "getWBS failed: " + e.toString());
+            } catch(Exception e) {
+                LOGGER.log(Level.SEVERE, "getWBS failed: " + e.toString());
+            }
+
+            return results;
+          }
 
       public List<ActivityCodeAssignment> getActivityCodeAssignments(P6ServiceSession session, String projectID, List<ActivityCodeAssignmentFieldType> returnParams){
         String url = session.getP6url() + "ActivityCodeAssignmentService?wsdl";
