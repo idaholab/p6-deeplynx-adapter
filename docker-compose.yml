@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile-dev
     volumes:
-      - ./src/main/java/com/example/p6:/var/app/main/java/com/example/p6
+      - ./src/main/java/com/inl/p6:/var/app/main/java/com/inl/p6
       - ./src/main/resources:/var/app/main/resources
       - ./src/sqlite:/var/app/sqlite
     env_file:

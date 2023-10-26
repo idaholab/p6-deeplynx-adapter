@@ -7,7 +7,7 @@
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>2.7.5</version>
 	</parent>
-	<groupId>com.example</groupId>
+	<groupId>com.inl</groupId>
 	<artifactId>p6</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>p6</name>
@@ -208,7 +208,7 @@
 	</dependencies>
 
 	<build>
-		<sourceDirectory>main/java/com/example/p6</sourceDirectory>
+		<sourceDirectory>main/java/com/inl/p6</sourceDirectory>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
@@ -219,7 +219,7 @@
 			<resource>
 				<directory>main/resources</directory>
 				<includes>
-					<include>**/*.properties</include>                  
+					<include>**/*.properties</include>
 				</includes>
 			</resource>
 		</resources>

@@ -1,4 +1,4 @@
-package com.example.p6;
+package com.inl.p6;
 
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;

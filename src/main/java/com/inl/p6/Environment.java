@@ -1,4 +1,4 @@
-package com.example.p6;
+package com.inl.p6;
 
 public class Environment {
 
