@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile-dev
+    volumes:
+      - ./src/main/java/com/inl/p6:/var/app/main/java/com/inl/p6
+      - ./src/main/resources:/var/app/main/resources
+      - ./src/sqlite:/var/app/sqlite
+    env_file:
+      - .env
+    ports:
+      - "${P6_ADAPTER_PORT}:8080"
+    platform: "linux/amd64"
+    extra_hosts:
+      - "${P6_HOSTNAME}:${P6_IP_ADDRESS}"
+
+volumes:
+    filestore:
+        driver: local
