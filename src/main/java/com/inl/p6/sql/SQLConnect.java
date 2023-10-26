@@ -1,3 +1,5 @@
+// Copyright 2023, Battelle Energy Alliance, LLC All Rights Reserved
+
 package com.inl.p6;
 
 import java.sql.Connection;
@@ -27,7 +29,7 @@ public class SQLConnect {
     private static final Logger LOGGER = Logger.getLogger( Logger.GLOBAL_LOGGER_NAME );
 
     public static Connection conn = null;
-    private static String url = System.getenv("P6_DB_LOC"); // TODO: replace with env var reference.
+    private static String url = System.getenv("P6_DB_LOC");
     private static DatabaseMetaData mdata = null;
 
     /**

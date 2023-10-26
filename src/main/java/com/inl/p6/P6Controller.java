@@ -1,3 +1,5 @@
+// Copyright 2023, Battelle Energy Alliance, LLC All Rights Reserved
+
 package com.inl.p6;
 
 import org.springframework.web.bind.annotation.RestController;
@@ -20,7 +22,6 @@ import org.springframework.web.client.RestTemplate;
 
 import org.json.*;
 
-// TODO: remove when moving to prod
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;

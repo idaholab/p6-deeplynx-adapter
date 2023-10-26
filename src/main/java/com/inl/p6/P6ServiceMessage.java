@@ -1,11 +1,8 @@
+// Copyright 2023, Battelle Energy Alliance, LLC All Rights Reserved
+
 package com.inl.p6;
 
 import java.util.Date;
-
-/**
- *
- * @author BOUNVL
- */
 
 public class P6ServiceMessage {
 

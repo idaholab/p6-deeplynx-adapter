@@ -1,3 +1,5 @@
+// Copyright 2023, Battelle Energy Alliance, LLC All Rights Reserved
+
 package com.inl.p6;
 
 import java.lang.reflect.Method;
@@ -49,7 +51,6 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 	private final String relsFileName = "/var/app/sqlite/import_rels.json";
 	private final String wbsFileName = "/var/app/sqlite/import_wbs.json";
 
-	// todo: could make getting this a little better
 	private Integer projectObjectId;
 
 	public void importP6Data(Environment env, int databaseInstance){
@@ -119,7 +120,6 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 							} else if (valueType == Double.class) {
 								datum.put(xmlElementName, 0);
 							}
-							// datum.put(xmlElementName, JSONObject.NULL); // todo: this might be better but would require change in DeepLynx
 						}
 						else if (valueType == Double.class) {
 							Double resultJAXBElement = ((JAXBElement<Double>) result).getValue();
@@ -385,7 +385,7 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 					hashMap.put(activityId, activityUDFValues);
 				}
 
-				// todo: currently supporting Text and Integer UDFTypeDataType's
+				// TODO: currently supporting Text and Integer UDFTypeDataType's
 				if (typeSubject.equals("Activity")) {
 					if (udfDataType.equals("Text")) {
 						String value = udfValueData.getString("Text");
