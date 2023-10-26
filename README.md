@@ -50,7 +50,6 @@ There are several P6 adapter endpoints defined in `P6Controller.java` that devel
   - For each entry in the p6.db connections table:
     - the adapter gets the unique serviceUserKey/serviceUserSecret pair
     - the adapter creates a new DeepLynxService instance where it first tries to authenticate with the key/secret pair and then tries to get a list of accessible containers
-      - if either the authentication fails or the list of accessible containers is empty then that entry in the p6.db connections table is deleted and the for loop moves to the next entry in the connections table
     - DeepLynxService uses DL’s “/import/datasources?decrypted=true” endpoint to get the datasource config info
       - For each datasource config info, a new ReadActivitiesWrapper instance is created and the importP6Data method is performed
 
