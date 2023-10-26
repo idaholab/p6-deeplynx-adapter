@@ -93,26 +93,6 @@ public class P6Controller {
 		return status_map;
 	}
 
-	@GetMapping("/view_db")
-	public HashMap<String, String> view_db() {
-		HashMap<String, String> view_map = new HashMap<String, String>();
-		// get status for each unique p6URL from configuration stored in p6.db
-		SQLConnect sqlconnect = new SQLConnect();
-		if (sqlconnect.connect()) {
-			ArrayList<HashMap<String, String>> connections = sqlconnect.getConnections();
-			// loop over connections
-			for (int i = 0; i < connections.size(); i++) {
-				HashMap<String, String> connection = connections.get(i);
-				view_map.put(connection.get("serviceUserKey"), connection.get("serviceUserSecret"));
-			}
-			sqlconnect.close();
-		} else {
-			LOGGER.log(Level.INFO, "Cannot connect to DB");
-		}
-
-		return view_map;
-	}
-
 	/**
     * Logs query
     */
@@ -161,7 +141,7 @@ public class P6Controller {
 	/**
     * Create an entry in the connections table for the adapter to run on
     */
-	@PostMapping("/configure")
+	// @PostMapping("/configure")
 	public HashMap<String, String> configure(@RequestBody HashMap<String, String> payload) {
 
 		HashMap<String, String> status_map = new HashMap<String, String>();
@@ -183,58 +163,6 @@ public class P6Controller {
 
 		return status_map;
 	}
-
-	/**
-    * Update an entry in the connections table
-    */
-	// @PutMapping("/update")
-	// public HashMap<String, String> update(@RequestBody HashMap<String, String> payload) {
-	//
-	// 	HashMap<String, String> status_map = new HashMap<String, String>();
-	//
-	// 	SQLConnect sqlconnect = new SQLConnect();
-	// 	status_map.put("update_success", "false");
-	//
-	// 	LOGGER.log(Level.INFO, "POST | /update");
-	//
-	// 	if (sqlconnect.connect()) {
-	// 		int rows_affected = sqlconnect.updateConnection(payload);
-	// 		if (rows_affected > 0) {
-	// 			status_map.put("update_success", "true");
-	// 		}
-	// 		status_map.put("rows_affected", String.valueOf(rows_affected));
-	// 		sqlconnect.close();
-	// 	}
-	//
-	// 	return status_map;
-	// }
-
-	/**
-    * Delete an entry in the connections table
-    */
-	// @DeleteMapping("/delete")
-	// public HashMap<String, String> delete(@RequestBody HashMap<String, String> payload) {
-	//
-	// 	HashMap<String, String> status_map = new HashMap<String, String>();
-	//
-	// 	SQLConnect sqlconnect = new SQLConnect();
-	// 	status_map.put("delete_success", "false");
-	//
-	// 	LOGGER.log(Level.INFO, "POST | /delete");
-	//
-	// 	if (sqlconnect.connect()) {
-	// 		int rows_affected = sqlconnect.deleteConnection(payload);
-	// 		if (rows_affected > 0) {
-	// 			status_map.put("delete_success", "true");
-	// 		}
-	// 		status_map.put("rows_affected", String.valueOf(rows_affected));
-	//
-	// 		sqlconnect.close();
-	// 	}
-	//
-	// 	return status_map;
-	// }
-
 	/**
     * Create an entry in the connections table for the adapter to run on
     */
@@ -248,7 +176,6 @@ public class P6Controller {
 		LOGGER.log(Level.INFO, "POST | /add_cert");
 		try {
 			File newFile = new File ("/var/app/lib/dldev.cer");
-			// newFile.createNewFile();
 			FileUtils.writeStringToFile(newFile, payload.get("cer_string"), "UTF8", false);
 			Process p = Runtime.getRuntime().exec("keytool -import -noprompt -trustcacerts -alias dlTrust -file lib/dldev.cer -keystore $JAVA_HOME/lib/security/cacerts -storepass changeit");
 			status_map.put("cert_success", "true");
