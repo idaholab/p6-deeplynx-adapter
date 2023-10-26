@@ -1,6 +1,6 @@
 # P6 Deep Lynx Adapter
 
-This repo is a Deep Lynx adapter for [Primavera P6](https://www.oracle.com/industries/construction-engineering/primavera-p6/). It synchronizes cost, scheduling, and resource data between projects in P6 to containers in Deep Lynx. Learn more about Deep Lynx [here](https://github.com/idaholab/Deep-Lynx/wiki).
+This repo is a Deep Lynx adapter for [Primavera P6](https://www.oracle.com/industries/construction-engineering/primavera-p6/). It synchronizes cost, scheduling, and resource data between projects in P6 to containers in [DeepLynx](https://github.com/idaholab/Deep-Lynx/wiki). The user provides a project Id for the adapter to target, and the adapter will automatically (on a specified interval) pull from P6 and import to DeepLynx the project's: activity data, activity relationships, and work breakdown structure (WBS). After this initial import to DeepLynx, the user should use DeepLynx's [typemapping](https://github.com/idaholab/Deep-Lynx/wiki/Type-Mapping) system create nodes in the user's DeepLynx container. The adapter will continue to regularly pull the specified P6 project's data into DeepLynx on the specified interval, and assuming the DeepLynx typemapping has been created, DeepLynx nodes will reflect any P6 data changes. New P6 activities will create new DeepLynx nodes, changed P6 activities will update the corresponding DeepLynx nodes, and deleted P6 activities will delete the corresponding nodes in DeepLynx.
 
 ## Instructions for Deployment
 ### System requirements
