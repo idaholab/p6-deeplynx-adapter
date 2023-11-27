@@ -302,7 +302,7 @@ public class ReadActivitiesWrapper extends ActivitiesWrapper {
 		}
 
 		writeJSONFile(projectWBSList, wbsFileName);
-		dlService.createManualImport(relationshipList.toString());
+		dlService.createManualImport(projectWBSList.toString());
 
 		// Check for errors and create response.
 		P6ServiceResponse response = useP6ServiceMessage(errors);
